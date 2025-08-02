@@ -5,6 +5,9 @@ export default function(eleventyConfig) {
 
   eleventyConfig.addPlugin(syntaxHighlight);
 
+  eleventyConfig.addPassthroughCopy({ "_includes/styles.css": "styles.css" });
+  eleventyConfig.addPassthroughCopy({ "_includes/layout.css": "layout.css" });
+
   eleventyConfig.addFilter("date", (dateObj, format = "yyyy-MM-dd") => {
     return DateTime.fromJSDate(new Date(dateObj)).toFormat(format);
   });
