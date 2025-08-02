@@ -40,20 +40,16 @@
       transform: translateY(0);
     }
 
-    @keyframes growText {
-      0% {
-        transform: scale(1);
-      }
-      50% {
-        transform: scale(1.5); /* 👈 phóng to tại giữa */
-      }
-      100% {
-        transform: scale(1); /* 👈 trở lại bình thường */
-      }
+    @keyframes growShrink {
+      0%   { transform: scale(1); }
+      50%  { transform: scale(1.5); }
+      100% { transform: scale(1); }
     }
     
     .zoom-font {
-      animation: growText 0.5s forwards;
+      display: inline-block;
+      font-size: 24px;
+      animation: growShrink 3s ease-in-out forwards; /* ⏱ 2s thay vì 1.2s */
     }
   </style>
 </head>
@@ -61,7 +57,7 @@
   <!-- Vị trí để thông báo -->
   <div id="notify" class="notification"></div>
   <div id="logo"></div>
-  <div id="sorry" class="zoom-font" style="display:none; color: white"> Sorry, ten year = 1 chuc </div>
+  <div id="sorry" style="display:none; color: white; font-size: 24px;"> Sorry, ten years = 1 chục </div>
 
   <script>
     const logo = document.getElementById("logo");
@@ -143,9 +139,12 @@
           showNotification("Đã lưu click thành công!");
         }
         if (cnt % 10 >= 0 && cnt % 10 <= 5) {
-          document.getElementById("sorry").style.display = 'inline';
+          document.getElementById("sorry").style.display = 'block';
+          void document.getElementById("sorry").offsetWidth;
+          document.getElementById("sorry").classList.add("zoom-font");
         } else {
-          $("#sorry").hide();
+          $("#sorry").hide();                    // Ẩn phần tử
+          $("#sorry").removeClass("zoom-font"); // Xoá class
         }
       },
       licenseKey: 'non-commercial-and-evaluation' // for non-commercial use only
