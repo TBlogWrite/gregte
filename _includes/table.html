@@ -19,9 +19,31 @@
       background-color: #00ffcc;
       border-radius: 20px;
     }
+    .notification {
+      position: fixed;
+      bottom: 20px;
+      left: 20px; /* 👈 đổi từ right sang left */
+      background: #00c853;
+      color: white;
+      padding: 12px 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+      font-family: sans-serif;
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.3s ease, transform 0.3s ease;
+      z-index: 1000;
+    }
+  
+    .notification.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
   </style>
 </head>
 <body>
+  <!-- Vị trí để thông báo -->
+  <div id="notify" class="notification"></div>
   <div id="logo"></div>
 
   <script>
@@ -34,6 +56,7 @@
     let dx = speed;
     let dy = speed;
     let angle = 0;
+    let cnt = 0;
 
     function move() {
       x += dx;
@@ -60,6 +83,19 @@
 
     move();
 
+    function showNotification(message, duration = 3000) {
+      const notify = document.getElementById('notify');
+      notify.textContent = message;
+      notify.classList.add('show');
+  
+      setTimeout(() => {
+        notify.classList.remove('show');
+      }, duration);
+    }
+  
+    // Ví dụ gọi thử:
+    
+
     const container = document.querySelector('#logo');
 
     const randomColor = () => {
@@ -84,6 +120,12 @@
       width: 433, // không cần scroll ngang (nếu số cột vừa)
       autoWrapRow: true,
       autoWrapCol: true,
+      afterOnCellMouseDown(row, col, td, event) {
+        cnt++;
+        if (cnt % 4 == 0) {
+          showNotification("Đã lưu click thành công!");
+        }
+      },
       licenseKey: 'non-commercial-and-evaluation' // for non-commercial use only
     });
 
