@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>DVD Screensaver</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/handsontable/styles/handsontable.min.css" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/handsontable/styles/ht-theme-main.min.css" />
+<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/handsontable/dist/handsontable.full.min.js"></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js"></script>
+  <style>
+    body {
+      margin: 0;
+      background: black;
+      overflow: hidden;
+    }
+    #logo {
+      position: absolute;
+      background-color: #00ffcc;
+      border-radius: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div id="logo"></div>
+
+  <script>
+    const logo = document.getElementById("logo");
+    const boxSize = 100;
+    const speed = 3;
+
+    let x = Math.random() * (window.innerWidth - boxSize);
+    let y = Math.random() * (window.innerHeight - boxSize);
+    let dx = speed;
+    let dy = speed;
+    let angle = 0;
+
+    function move() {
+      x += dx;
+      y += dy;
+      angle += 2;
+
+      // Chạm tường -> đổi hướng + đổi màu
+      if (x <= 0 || x + boxSize >= window.innerWidth) {
+        dx *= -1;
+      }
+      if (y <= 0 || y + boxSize >= window.innerHeight) {
+        dy *= -1;
+      }
+
+      // Cập nhật vị trí bằng Anime.js
+      anime.set(logo, {
+        translateX: x,
+        translateY: y,
+        rotate: angle
+      });
+
+      requestAnimationFrame(move);
+    }
+
+    move();
+
+    const container = document.querySelector('#logo');
+
+    const randomColor = () => {
+      return '#' + Math.floor(Math.random()*16777215).toString(16);
+    };
+
+    const hot = new Handsontable(container, {
+      // theme name with obligatory ht-theme-* prefix
+      themeName: 'ht-theme-main-dark-auto',
+      // other options
+      data: [
+        ['2019', 10, 11, 12, 13],
+        ['2020', 20, 11, 14, 13],
+        ['2021', 30, 15, 12, 13]
+      ],
+      rowHeaders: true,
+      colHeaders: ['', 'Tesla', 'Volvo', 'Toyota', 'Ford'],
+      filters: true,
+      contexMenu: true,
+      dropdownMenu: true,
+      height: 125,  // scroll dọc
+      width: 433, // không cần scroll ngang (nếu số cột vừa)
+      autoWrapRow: true,
+      autoWrapCol: true,
+      licenseKey: 'non-commercial-and-evaluation' // for non-commercial use only
+    });
+
+    setInterval(() => {
+      const rows = hot.countRows();
+      const cols = hot.countCols();
+
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          const td = hot.getCell(r, c);
+          if (td) {
+            td.style.border = `2px solid ${randomColor()}`;
+          }
+        }
+      }
+    }, 500);
+
+  </script>
+</body>
+</html>
