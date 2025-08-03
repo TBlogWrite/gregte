@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>Tòa nhà song song tuyến đường</title>
+    <style>
+        body {
+            margin: 0;
+            background: black;
+        }
+
+        canvas {
+            display: block;
+        }
+    </style>
+</head>
+
+<body style="zoom: 65%;">
+    <a style="
+    position: fixed;
+    right: 0;
+    bottom: 200px;
+    z-index: 1000;
+  " data-flickr-embed="true" href="https://www.flickr.com/photos/192109257@N04/54696531001/in/dateposted-public/"
+        title="Map">
+        <img src="https://live.staticflickr.com/65535/54696531001_ca42e36134_c.jpg" width="80%" height="auto"
+            alt="Map" />
+    </a>
+    <iframe data-testid="embed-iframe" style="border-radius:12px"
+        src="https://open.spotify.com/embed/track/67u7sw6ZJR8yOyX3dwoeBV?utm_source=generator" width="100%" height="352"
+        frameBorder="0" allowfullscreen=""
+        allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+    <script>
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x000000);
+
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 2000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+        scene.add(new THREE.AmbientLight(0xffffff));
+
+        function lngLatToXZ(lng, lat, originLng, originLat, scale = 100000) {
+            const x = (lng - originLng) * scale;
+            const z = (lat - originLat) * scale;
+            return [x, z];
+        }
+
+        function createBuildingWithWindows(x, y, z, w, h, d) {
+            const group = new THREE.Group();
+
+            const boxGeo = new THREE.BoxGeometry(w, h, d);
+            const edges = new THREE.EdgesGeometry(boxGeo);
+            const wire = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0xffffff }));
+            wire.position.set(x, y + h / 2, z);
+            group.add(wire);
+
+            const winRows = Math.floor(h / 1.2);
+            const winColsFront = Math.floor(w / 1.2);
+            const winColsSide = Math.floor(d / 1.2);
+            const winW = 0.6;
+            const winH = 0.6;
+            const startY = y + 0.6;
+
+            const startX = x - (w / 2) + 0.6;
+            for (let row = 0; row < winRows; row++) {
+                for (let col = 0; col < winColsFront; col++) {
+                    const px = startX + col * 1.2;
+                    const py = startY + row * 1.2;
+
+                    const front = new THREE.Mesh(new THREE.PlaneGeometry(winW, winH), new THREE.MeshBasicMaterial({ color: 0xffffff }));
+                    front.position.set(px, py, z + d / 2 + 0.01);
+                    group.add(front);
+
+                    const back = new THREE.Mesh(new THREE.PlaneGeometry(winW, winH), new THREE.MeshBasicMaterial({ color: 0xffffff }));
+                    back.rotation.y = Math.PI;
+                    back.position.set(px, py, z - d / 2 - 0.01);
+                    group.add(back);
+                }
+            }
+
+            const startZ = z - (d / 2) + 0.6;
+            for (let row = 0; row < winRows; row++) {
+                for (let col = 0; col < winColsSide; col++) {
+                    const pz = startZ + col * 1.2;
+                    const py = startY + row * 1.2;
+
+                    const right = new THREE.Mesh(new THREE.PlaneGeometry(winW, winH), new THREE.MeshBasicMaterial({ color: 0xffffff }));
+                    right.rotation.y = -Math.PI / 2;
+                    right.position.set(x + w / 2 + 0.01, py, pz);
+                    group.add(right);
+                }
+            }
+
+            return group;
+        }
+
+        const geojson = {
+            "type": "FeatureCollection",
+            "features": [{
+                "type": "Feature",
+                "geometry": {
+                    "type": "LineString",
+                    "coordinates": [
+                        [
+                            108.47109247220044,
+                            15.573068397333088
+                        ],
+                        [
+                            108.47199207810627,
+                            15.57240988549546
+                        ],
+                        [
+                            108.47814991709589,
+                            15.580164287098313
+                        ],
+                        [
+                            108.47795872057947,
+                            15.58050055578525
+                        ],
+                        [
+                            108.47721916157167,
+                            15.58064709007138
+                        ],
+                        [
+                            108.47603873793958,
+                            15.582199678842713
+                        ],
+                        [
+                            108.47496652725027,
+                            15.582444170699262
+                        ],
+                        [
+                            108.47043284669854,
+                            15.58588690629361
+                        ],
+                        [
+                            108.46878749881103,
+                            15.583868299635483
+                        ],
+                        [
+                            108.46887521424145,
+                            15.574936424999166
+                        ],
+                        [
+                            108.47109175894815,
+                            15.573069156450558
+                        ]
+                    ]
+                }
+            }]
+        };
+
+        const gridSize = 15;
+        const spacing = 12;
+        const used = new Set();
+
+        function getGridPos(i, j) {
+            return [(i - Math.floor(gridSize / 2)) * spacing, (j - Math.floor(gridSize / 2)) * spacing];
+        }
+
+        let pathPoints = [];
+        function drawRoute(geojson) {
+            const coords = geojson.features[0].geometry.coordinates;
+            const [originLng, originLat] = coords[0];
+
+            pathPoints = coords.map(([lng, lat]) => {
+                const [x, z] = lngLatToXZ(lng, lat, originLng, originLat);
+                return new THREE.Vector3(x, 0, z);
+            });
+
+            const geometry = new THREE.BufferGeometry().setFromPoints(pathPoints);
+            const material = new THREE.LineBasicMaterial({ color: 0xffff00 });
+            scene.add(new THREE.Line(geometry, material));
+
+            for (let i = 0; i < pathPoints.length - 1; i++) {
+                const p1 = pathPoints[i], p2 = pathPoints[i + 1];
+                const dx = p2.x - p1.x, dz = p2.z - p1.z;
+                const len = Math.sqrt(dx * dx + dz * dz);
+                if (len === 0) continue;
+
+                const offsetX = (dz / len) * 6;
+                const offsetZ = (-dx / len) * 6;
+
+                const steps = Math.floor(len / 6);
+                for (let j = 0; j <= steps; j++) {
+                    const t = j / steps;
+                    const px = p1.x + dx * t;
+                    const pz = p1.z + dz * t;
+
+                    for (let side of [-1, 1]) {
+                        const mx = px + side * offsetX;
+                        const mz = pz + side * offsetZ;
+
+                        const gi = Math.round((mx / spacing) + gridSize / 2);
+                        const gj = Math.round((mz / spacing) + gridSize / 2);
+                        const key = `${gi},${gj}`;
+                        if (used.has(key)) continue;
+                        used.add(key);
+
+                        const w = 8;
+                        const h = 4 + Math.random() * 6;
+                        const d = 4;
+
+                        const angle = Math.atan2(dz, dx);
+                        const building = createBuildingWithWindows(0, 0, 0, w, h, d);
+                        building.rotation.y = angle;
+                        building.position.set(mx, 0, mz);
+                        scene.add(building);
+                    }
+                }
+            }
+        }
+
+        drawRoute(geojson);
+
+        // === NHÂN VẬT ===
+        const person = new THREE.Group();
+        scene.add(person);
+
+        // === ĐẦU ===
+        const head = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.6, 0.6), new THREE.MeshBasicMaterial({ color: 0xffccaa }));
+        head.position.y = 2.4;
+        person.add(head);
+
+        const body = new THREE.Mesh(new THREE.BoxGeometry(0.8, 1.2, 0.4), new THREE.MeshBasicMaterial({ color: 0x3366ff }));
+        body.position.y = 1.5;
+        person.add(body);
+
+        const legL = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.9, 0.3), new THREE.MeshBasicMaterial({ color: 0x333333 }));
+        legL.position.set(-0.2, 0.45, 0);
+        person.add(legL);
+
+        const legR = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.9, 0.3), new THREE.MeshBasicMaterial({ color: 0x333333 }));
+        legR.position.set(0.2, 0.45, 0);
+        person.add(legR);
+
+        const armL = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.8, 0.2), new THREE.MeshBasicMaterial({ color: 0xffccaa }));
+        armL.position.set(-0.6, 1.6, 0);
+        person.add(armL);
+
+        const armR = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.8, 0.2), new THREE.MeshBasicMaterial({ color: 0xffccaa }));
+        armR.position.set(0.6, 1.6, 0);
+        person.add(armR);
+
+        const demonHeadGroup = new THREE.Group();
+        const scale = 5;
+
+        // Đầu hình hộp
+        const headGeo = new THREE.BoxGeometry(0.6 * scale, 0.6 * scale, 0.6 * scale);
+        const headMat = new THREE.MeshBasicMaterial({ color: 0x000000 });
+        const headMesh = new THREE.Mesh(headGeo, headMat);
+        demonHeadGroup.add(headMesh);
+
+        // Viền đỏ
+        const headEdges = new THREE.EdgesGeometry(headGeo);
+        const headLine = new THREE.LineSegments(
+            headEdges,
+            new THREE.LineBasicMaterial({ color: 0xff0000 })
+        );
+        demonHeadGroup.add(headLine);
+
+        // Mắt trái (dạng hộp)
+        const eyeL = new THREE.Mesh(
+            new THREE.BoxGeometry(0.16 * scale, 0.16 * scale, 0.1 * scale),
+            new THREE.MeshBasicMaterial({ color: 0xff3333 })
+        );
+        eyeL.position.set(-0.15 * scale, 0.12 * scale, 0.31 * scale);
+        demonHeadGroup.add(eyeL);
+
+        // Mắt phải (clone mắt trái)
+        const eyeR = eyeL.clone();
+        eyeR.position.x = 0.15 * scale;
+        demonHeadGroup.add(eyeR);
+
+        // Miệng đen (hình hộp mỏng)
+        const mouth = new THREE.Mesh(
+            new THREE.BoxGeometry(0.35 * scale, 0.12 * scale, 0.05 * scale),
+            new THREE.MeshBasicMaterial({ color: 0x111111 })
+        );
+        mouth.position.set(0, -0.15 * scale, 0.31 * scale);
+        demonHeadGroup.add(mouth);
+
+        // Răng nanh trái (hình hộp nhỏ)
+        const fangL = new THREE.Mesh(
+            new THREE.BoxGeometry(0.05 * scale, 0.1 * scale, 0.05 * scale),
+            new THREE.MeshBasicMaterial({ color: 0xffffff })
+        );
+        fangL.position.set(-0.06 * scale, -0.2 * scale, 0.32 * scale);
+        demonHeadGroup.add(fangL);
+
+        // Răng nanh phải
+        const fangR = fangL.clone();
+        fangR.position.x = 0.06 * scale;
+        demonHeadGroup.add(fangR);
+
+        // Quay đầu 180 độ
+        demonHeadGroup.rotation.y = Math.PI;
+        scene.add(demonHeadGroup);
+
+
+        const smokeParticles = [];
+        const maxSmoke = 60;
+        const smokeMaterial = new THREE.MeshBasicMaterial({
+            color: 0x555555,
+            transparent: true,
+            opacity: 0.5,
+        });
+        const smokeGeometry = new THREE.SphereGeometry(0.3, 8, 8);
+
+        let segmentIndex = 0;
+        let segmentProgress = 0;
+        const moveSpeed = 0.45;
+
+        function animate() {
+            requestAnimationFrame(animate);
+            if (pathPoints.length < 2) return;
+
+            const current = pathPoints[segmentIndex];
+            const next = pathPoints[segmentIndex + 1];
+
+            const direction = new THREE.Vector3().subVectors(next, current);
+            const length = direction.length();
+            direction.normalize();
+
+            segmentProgress += moveSpeed;
+            if (segmentProgress >= length) {
+                segmentIndex++;
+                if (segmentIndex >= pathPoints.length - 1) segmentIndex = 0;
+                segmentProgress = 0;
+            }
+
+            const positionOnLine = current.clone().add(direction.clone().multiplyScalar(segmentProgress));
+
+            person.position.set(positionOnLine.x, 0.9, positionOnLine.z);
+
+            // Tính hướng vuông góc với hướng di chuyển (right vector)
+            const right = new THREE.Vector3(direction.z, 0, -direction.x); // Vuông góc
+            right.normalize();
+
+            const cameraOffset = right.multiplyScalar(10); // Lệch 10 đơn vị về bên phải
+            const cameraPos = positionOnLine.clone().add(cameraOffset);
+            cameraPos.y = 15; // Độ cao camera
+            camera.position.copy(cameraPos);
+
+            const lookAtPos = positionOnLine.clone();
+            lookAtPos.y = 0;
+            camera.lookAt(lookAtPos);
+
+            const time = performance.now() / 300; // tốc độ chạy
+
+            // Swing motion
+            const swing = Math.sin(time) * 0.5;
+
+            legL.rotation.x = swing;
+            legR.rotation.x = -swing;
+
+            armL.rotation.x = -swing;
+            armR.rotation.x = swing;
+            // Đặt đầu quỷ phía sau người một đoạn
+
+
+            // Vị trí của đầu quỷ phía sau người
+            // Vị trí phía sau nhân vật
+            const followOffset = direction.clone().negate().multiplyScalar(4);
+            const demonPos = positionOnLine.clone().add(followOffset);
+            demonPos.y = 2.6;
+            demonHeadGroup.position.copy(demonPos);
+
+            // === TẠO HẠT KHÓI TỪ CON QUỶ ===
+            if (smokeParticles.length < maxSmoke) {
+
+                let smoke = new THREE.Mesh(smokeGeometry, smokeMaterial.clone());
+                smoke.position.copy(demonHeadGroup.position);
+                smoke.material.opacity = 0.4 + Math.random() * 0.2;
+                smoke.scale.setScalar(1 + Math.random());
+                scene.add(smoke);
+                smokeParticles.push({ mesh: smoke, age: 0 });
+            }
+
+            // === CẬP NHẬT KHÓI ===
+            for (let i = smokeParticles.length - 1; i >= 0; i--) {
+                const p = smokeParticles[i];
+                p.age += 1;
+
+                p.mesh.position.y += 0.02;             // bay lên
+                p.mesh.scale.multiplyScalar(1.01);    // giãn nở
+                p.mesh.material.opacity *= 0.96;      // mờ dần
+
+                if (p.age > 60 || p.mesh.material.opacity < 0.02) {
+                    scene.remove(p.mesh);
+                    smokeParticles.splice(i, 1);
+                }
+            }
+
+            // Quay mặt về camera
+            demonHeadGroup.lookAt(camera.position);
+
+            renderer.render(scene, camera);
+        }
+
+        animate();
+    </script>
+</body>
+
+</html>

@@ -16,3 +16,10 @@ layout: layout.html
   <small>({{ str.date | date: "yyyy-MM-dd" }})</small>
 </li>
 {% endfor %}
+
+{% for strt in collections.strt | reverse %}
+<li style="">
+  <a href="{{ strt.url }}">{{ strt.data.title }}</a>
+  <small>({{ strt.date | date: "yyyy-MM-dd" }})</small>
+</li>
+{% endfor %}
