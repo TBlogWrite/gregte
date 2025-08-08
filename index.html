@@ -11,7 +11,7 @@ layout: layout.html
 
 
 {% for str in collections.str | reverse %}
-<li style="display: none;">
+<li style="">
   <a href="{{ str.url }}">{{ str.data.title }}</a>
   <small>({{ str.date | date: "yyyy-MM-dd" }})</small>
 </li>
