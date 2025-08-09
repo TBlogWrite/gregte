@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Flow Oxy not include</title>
+  <script src="https://unpkg.com/cytoscape/dist/cytoscape.min.js"></script>
+  <script src="https://unpkg.com/dagre/dist/dagre.min.js"></script>
+  <script src="https://unpkg.com/cytoscape-dagre/cytoscape-dagre.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/cytoscape-node-html-label@1.2.2/dist/cytoscape-node-html-label.min.js"></script>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f0f2f5;
+      padding: 30px;
+    }
+    #cy {
+      width: 100%;
+      height: 500px;
+    }
+    /* CSS cho To-Do */
+    /*.todo-container {
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      width: 250px;
+    }
+    .todo-title {
+      text-align: center;
+      font-size: 1.2em;
+      font-weight: bold;
+      margin-bottom: 15px;
+    }
+    .todo-item {
+      display: flex;
+      align-items: center;
+      padding: 8px;
+      border-bottom: 1px solid #eee;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .todo-item:hover {
+      background: #f9f9f9;
+    }
+    .todo-item input[type="checkbox"] {
+      margin-right: 10px;
+      transform: scale(1.2);
+    }
+    .todo-text {
+      flex: 1;
+      font-size: 0.95em;
+    }
+    .todo-item.completed .todo-text {
+      text-decoration: line-through;
+    }*/
+    body {
+      background: #0f0f0f;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      font-family: 'Roboto Mono', monospace;
+    }
+    
+    /* Hiện đại + suy tàn */
+    h1 {
+      font-size: 7rem; /* tăng từ 6rem lên 8rem */
+      font-weight: 900;
+      text-transform: uppercase;
+      position: relative;
+      background: linear-gradient(to bottom, rgb(146, 143, 143) 50%, #c76119 50%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      letter-spacing: 2px;
+      animation: glitch 2s infinite;
+      filter: contrast(1.2) brightness(1.1);
+      
+      /* thêm stroke để chữ trông mập hơn */
+      -webkit-text-stroke: 2px rgb(146, 143, 143);
+    }
+    /* Hiệu ứng crack/nứt */
+    h1::before,
+    h1::after {
+      content: attr(data-text);
+      position: absolute;
+      left: 0;
+      width: 100%;
+      background: inherit;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      overflow: hidden;
+    }
+    
+    h1::before {
+      top: 0;
+      clip-path: polygon(0 0, 100% 0, 100% 40%, 0 30%);
+      animation: crack1 2s infinite linear alternate;
+    }
+    
+    h1::after {
+      bottom: 0;
+      clip-path: polygon(0 70%, 100% 80%, 100% 100%, 0% 100%);
+      animation: crack2 1.8s infinite linear alternate;
+    }
+    
+    /* Glitch animation */
+    @keyframes glitch {
+      0% { transform: none; }
+      20% { transform: skewX(2deg); }
+      40% { transform: skewX(-2deg); }
+      60% { transform: translateX(2px); }
+      80% { transform: translateX(-2px); }
+      100% { transform: none; }
+    }
+    
+    @keyframes crack1 {
+      0% { transform: translateX(0); }
+      100% { transform: translateX(-2px); }
+    }
+    
+    @keyframes crack2 {
+      0% { transform: translateX(0); }
+      100% { transform: translateX(2px); }
+    }
+
+    .todo-container {
+      background: #fff;
+      border-radius: 10px;
+      padding: 15px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+      
+      width: 240px;
+    }
+  
+    .todo-title {
+      font-size: 16px;
+      font-weight: bold;
+      margin-bottom: 10px;
+      color: #333;
+      text-align: center;
+    }
+  
+    .todo-item {
+      position: relative;
+      background: white;
+      border-radius: 8px;
+      padding: 8px 8px 8px 32px; /* chừa chỗ cho số */
+      margin-bottom: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+  
+    .todo-item:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+  
+    .todo-text {
+      font-size: 14px;
+      color: #333;
+    }
+  
+    .icon-number {
+      position: absolute;
+      top: 6px;
+      left: 6px;
+      background: #ff5722;
+      color: white;
+      font-size: 12px;
+      font-weight: bold;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    }
+  </style>
+</head>
+<body>
+  <h1 style="text-align: center; margin-bottom: 0;" data-text="Oxy not include">Oxy not include</h1>
+  <h1 style="text-align: center; margin-top:0;" data-text="Space">Space</h1>
+  <div id="cy"></div>
+
+  <!-- Template HTML cho node -->
+  <template id="todo-template">
+    <div class="todo-container">
+      <div class="todo-title">$(icon)$(muctieu)</div>
+      <div class="todo-item">
+        <div class="icon-number">1</div>
+        <div class="todo-text">$(cv1)</div>
+      </div>
+      <div class="todo-item">
+        <div class="icon-number">2</div>
+        <div class="todo-text">$(cv2)</div>
+      </div>
+      <div class="todo-item">
+        <div class="icon-number">3</div>
+        <div class="todo-text">$(cv3)</div>
+      </div>
+      <div class="todo-item">
+        <div class="icon-number">4</div>
+        <div class="todo-text">$(cv4)</div>
+      </div>
+      <div class="todo-item">
+        <div class="icon-number">5</div>
+        <div class="todo-text">$(cv5)</div>
+      </div>
+    </div>
+  </template>
+
+  <script>
+    const cy = cytoscape({
+      container: document.getElementById('cy'),
+      elements: [
+        // Nhóm 1
+        //{ data: { id: 'A' , icon: '💩', muctieu: "Chỉ đi wc", cv1: "Đi vệ sinh", cv2: 'Ăn uống', cv3: 'Nghỉ ngơi', cv4:'Xây dựng', cv5: 'Nghiên cứu'} },
+        // { data: { id: 'B' } },
+        // { data: { id: 'C' } },
+        // { data: { source: 'A', target: 'B' } },
+        // { data: { source: 'B', target: 'C' } },
+
+        // Nhóm 2
+        //{ data: { id: 'D', icon: '🍣', muctieu: "Chỉ lo ăn ngon",  } },
+        //{ data: { id: 'E' } },
+        //{ data: { id: 'F' } },
+        //{ data: { source: 'D', target: 'E' } },
+        //{ data: { source: 'E', target: 'F' } },
+
+        // Nhóm 3
+        // { data: { id: 'G', icon: '🔬', muctieu: "Đam mê nghiên cứu", } },
+        //{ data: { id: 'H' } },
+        //{ data: { id: 'I' } },
+        //{ data: { source: 'G', target: 'H' } },
+        //{ data: { source: 'H', target: 'I' } }
+        { data: { id: 'A', icon: '💩', muctieu: "Chỉ đi wc", cv1: "Đi vệ sinh", cv2: "Ăn uống", cv3: "Nghỉ ngơi", cv4: "Xây dựng", cv5: "Nghiên cứu" } },
+        { data: { id: 'D', icon: '🍣', muctieu: "Chỉ lo ăn ngon", cv1: "Ăn uống", cv2: "Nghỉ ngơi", cv3: "Đi vệ sinh", cv4: "Nghiên cứu", cv5: "Xây dựng" } },
+        { data: { id: 'G', icon: '🔬', muctieu: "Đam mê nghiên cứu", cv1: "Nghiên cứu", cv2: "Xây dựng", cv3: "Nghỉ ngơi", cv4: "Ăn uống", cv5: "Đi vệ sinh" } }
+
+      ],
+      style: [
+        {
+          selector: 'node',
+          style: {
+            'content': '',
+            'background-opacity': 0, // Ẩn nền mặc định
+            'border-width': 0,
+            'width': 260,
+            'height': 180,
+            'shape': 'roundrectangle'
+          }
+        },
+        {
+          selector: 'edge',
+          style: {
+            'width': 2,
+            'line-color': '#999',
+            'target-arrow-color': '#999',
+            'target-arrow-shape': 'triangle'
+          }
+        }
+      ],
+      layout: {
+        name: 'dagre',
+        //rankDir: 'LR', // Nằm ngang
+        nodeSep: 100,
+        rankSep: 300,
+        //orientation: 'horizontal' // Khong hoat dong
+      }
+    });
+
+    // Lấy nội dung template HTML
+    const templateHTML = document.getElementById('todo-template').innerHTML;
+
+    // Gắn HTML cho từng node
+    cy.nodeHtmlLabel([
+    {
+      query: 'node',
+      halign: 'center',
+      valign: 'center',
+      tpl: (data) => {
+        return templateHTML
+          .replace('$(icon)', data.icon)
+          .replace('$(muctieu)', data.muctieu)
+          .replace('$(cv1)', data.cv1)
+          .replace('$(cv2)', data.cv2)
+          .replace('$(cv3)', data.cv3)
+          .replace('$(cv4)', data.cv4)
+          .replace('$(cv5)', data.cv5);
+      }
+    }
+  ]);
+  </script>
+</body>
+</html>
