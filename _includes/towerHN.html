@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Tháp Hà Nội – Canh Giữa</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f0f0f0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+    canvas {
+      background: white;
+      border: 1px solid #ccc;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="hanoiCanvas" width="600" height="400"></canvas>
+  <script>
+    const canvas = document.getElementById('hanoiCanvas');
+    const ctx = canvas.getContext('2d');
+
+    const numDisks = 7;
+    let pegs = [[], [], []];
+
+    for (let i = numDisks; i >= 1; i--) {
+      pegs[0].push(i);
+    }
+
+    const pegX = [150, 300, 450];
+    const pegY = 350;
+    const diskHeight = 20;
+    const diskWidthFactor = 20;
+
+    function drawPegs() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = '#000';
+      for (let i = 0; i < 3; i++) {
+        ctx.fillRect(pegX[i] - 5, pegY - 150, 10, 150);
+      }
+    }
+
+    function drawDisks() {
+      for (let i = 0; i < 3; i++) {
+        for (let j = 0; j < pegs[i].length; j++) {
+          const size = pegs[i][j];
+          const width = size * diskWidthFactor;
+          const x = pegX[i] - width / 2;
+          const y = pegY - (j + 1) * diskHeight;
+          ctx.fillStyle = `hsl(${size * 50}, 70%, 50%)`;
+          ctx.fillRect(x, y, width, diskHeight);
+        }
+      }
+    }
+
+    function moveDisk(from, to) {
+      pegs[to].push(pegs[from].pop());
+      drawPegs();
+      drawDisks();
+    }
+
+    function hanoi(n, from, to, aux) {
+      if (n === 1) {
+        moves.push([from, to]);
+        return;
+      }
+      hanoi(n - 1, from, aux, to);
+      moves.push([from, to]);
+      hanoi(n - 1, aux, to, from);
+    }
+
+    let moves = [];
+    hanoi(numDisks, 0, 2, 1);
+
+    let step = 0;
+    function animate() {
+      if (step < moves.length) {
+        const [from, to] = moves[step];
+        moveDisk(from, to);
+        step++;
+        setTimeout(animate, 500);
+      }
+    }
+
+    drawPegs();
+    drawDisks();
+    setTimeout(animate, 1000);
+  </script>
+</body>
+</html>

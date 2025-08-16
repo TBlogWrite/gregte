@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Music Pink Store</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+/* BODY – Pink Punk + Mercury Future */
+body {
+    background: linear-gradient(135deg, #ff1ead, #a64eff, #00f7ff, #d9d9d9, #f5f5f5);
+    background-size: 500% 500%;
+    animation: cyberBg 10s ease infinite;
+    color: #fff;
+    font-family: 'Segoe UI', sans-serif;
+}
+@keyframes cyberBg {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+/* HEADER */
+header {
+    text-align: center;
+    padding: 30px 0;
+}
+header h1 {
+    font-weight: bold;
+    text-shadow: 0 0 20px #ff66cc, 0 0 40px #00f7ff;
+}
+header h1.mercury {
+    background: linear-gradient(120deg, #ffffff, #cccccc, #b3b3b3, #e6e6e6, #ffffff);
+    background-size: 400% 400%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: mercuryFlow 6s ease infinite;
+    font-weight: bold;
+    text-shadow: 0 0 20px rgba(255,255,255,0.7), 0 0 40px rgba(200,200,200,0.6);
+}
+@keyframes mercuryFlow {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+/* CARD – Neon + Mercury border */
+.card {
+    background: rgba(255, 192, 203, 0.12);
+    border: 1px solid rgba(220,220,220,0.6);
+    border-radius: 20px;
+    backdrop-filter: blur(5px);
+    color: #fff;
+    box-shadow: 0 0 20px rgba(255,105,180,0.5),
+                0 0 30px rgba(255,255,255,0.4);
+    transition: transform 0.4s, box-shadow 0.4s;
+    animation: fadeZoom 1s ease forwards;
+}
+.card:hover {
+    transform: translateY(-8px) scale(1.03);
+    box-shadow: 0 0 25px #ff66cc, 
+                0 0 50px #00f7ff,
+                0 0 35px rgba(255,255,255,0.8);
+}
+@keyframes fadeZoom {
+    from { opacity: 0; transform: scale(0.9); }
+    to   { opacity: 1; transform: scale(1); }
+}
+
+/* BUTTON – Pink neon + mercury shine */
+.btn-pink {
+    background: #ff4ecb;
+    border: none;
+    color: #fff;
+    font-weight: bold;
+    border-radius: 50px;
+    box-shadow: 0 0 12px rgba(255, 105, 180, 0.8);
+    transition: all 0.3s;
+    position: relative;
+    overflow: hidden;
+}
+.btn-pink:hover {
+    background: #ff1aad;
+    transform: scale(1.05);
+    box-shadow: 0 0 20px #ff66cc, 0 0 30px #00f7ff;
+}
+.btn-pink::after {
+    content: "";
+    position: absolute;
+    top: 0; left: -100%;
+    width: 200%; height: 100%;
+    background: linear-gradient(120deg, transparent, rgba(255,255,255,0.6), transparent);
+    animation: shine 3s infinite;
+}
+@keyframes shine {
+    0% { left: -100%; }
+    50% { left: 100%; }
+    100% { left: 100%; }
+}
+
+/* TEXT Pink neon */
+.text-pink {
+    color: #ffb6e6;
+    font-weight: bold;
+    text-shadow: 0 0 10px #ff33cc, 0 0 15px #00f7ff;
+}
+
+/* HEART rating */
+.hearts span {
+    font-size: 1.5rem;
+    cursor: pointer;
+    transition: transform 0.2s, text-shadow 0.2s;
+}
+.hearts span:hover {
+    transform: scale(1.2);
+    text-shadow: 0 0 10px #ff66ff, 0 0 15px #00f7ff;
+}
+
+#bannerCarousel {
+    max-height: 400px;
+}
+
+#bannerCarousel .carousel-item img {
+    height: 400px;
+    object-fit: cover;
+    border-radius: 20px;
+}
+
+/* Fade effect */
+.carousel-fade .carousel-item {
+    opacity: 0;
+    transition: opacity .8s ease-in-out;
+}
+
+.carousel-fade .carousel-item.active {
+    opacity: 1;
+}
+
+/* Card */
+.card {
+    background: rgba(255, 192, 203, 0.15);
+    border: none;
+    border-radius: 20px;
+    backdrop-filter: blur(5px);
+    color: #fff;
+    box-shadow: 0 0 20px rgba(255, 105, 180, 0.5);
+    transition: transform 0.4s, box-shadow 0.4s;
+    animation: fadeZoom 1s ease forwards;
+}
+
+/* Card thêm viền thủy ngân */
+.card {
+    border: 1px solid rgba(220,220,220,0.6);
+    box-shadow: 0 0 20px rgba(255,105,180,0.5),
+                0 0 30px rgba(255,255,255,0.4);
+}
+.card:hover {
+    box-shadow: 0 0 25px #ff66cc, 0 0 50px #00f7ff, 0 0 35px rgba(255,255,255,0.8);
+}
+
+/*.card:hover {
+    transform: translateY(-8px) scale(1.03);
+    box-shadow: 0 0 25px rgba(255, 182, 193, 0.9);
+}*/
+    </style>
+</head>
+
+<body>
+    <header>
+        <h1>🎶 Music Pink Store 💖</h1>
+    </header>
+
+    <!-- Banner Carousel -->
+    <div id="bannerCarousel" class="carousel slide carousel-fade container mb-5" data-bs-ride="carousel">
+        <div class="carousel-inner rounded-4 shadow-lg">
+        <div class="carousel-item">
+            <img src="https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4" class="d-block w-100"
+                alt="Studio">
+        </div>
+          <div class="carousel-item active position-relative">
+            
+            <!-- Ảnh nền -->
+            <img src="https://images.unsplash.com/photo-1511379938547-c1f69419868d" 
+                 class="d-block w-100" alt="Concert">
+      
+            <!-- SVG nốt nhạc nổi -->
+            <svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 64 64"
+                 style="position: absolute; top: 20px; left: 20px; z-index: 2;">
+              <!-- Thân nốt nhạc trái -->
+              <rect x="18" y="8" width="3" height="30" fill="#ff66b2"/>
+              <circle cx="20" cy="42" r="7" fill="#ff3399"/>
+              
+              <!-- Thân nốt nhạc phải -->
+              <rect x="36" y="8" width="3" height="30" fill="#ff66b2"/>
+              <circle cx="38" cy="42" r="7" fill="#ff3399"/>
+              
+              <!-- Thanh nối ngang -->
+              <rect x="18" y="8" width="21" height="3" fill="#ff66b2"/>
+              
+              <!-- Sóng âm -->
+              <path d="M10 55 Q20 50 30 55 T50 55 T70 55" 
+                    stroke="#ff80c0" 
+                    stroke-width="3" 
+                    fill="none"/>
+            </svg>
+      
+          </div>
+        </div>
+      </div>
+      
+
+    <!-- Product Carousel -->
+    <div id="productCarousel" class="carousel slide container mb-5" data-bs-ride="carousel">
+        <div class="carousel-inner">
+            <div class="carousel-item active">
+                <div class="row g-4">
+                    <div class="col-md-4">
+                        <div class="card p-3 text-center">
+                            <img src="https://live.staticflickr.com/65535/54724370695_e61b05858c_c.jpg"
+                            class="card-img-top rounded" alt="Pink Music Watercolor Banner">
+                            <div class="product-card p-3 text-center">
+                                <h5 class="text-white">Guitar Pink</h5>
+                                <p id="price1" class="text-pink">💲 2,500,000 VND</p>
+                                <div id="rating1" class="hearts">
+                                    <span data-value="1">❤️</span>
+                                    <span data-value="2">❤️</span>
+                                    <span data-value="3">❤️</span>
+                                    <span data-value="4">🤍</span>
+                                    <span data-value="5">🤍</span>
+                                </div>
+                            </div>
+                            <button class="btn btn-pink">Mua ngay</button>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card p-3 text-center">
+                            <img src="https://images.unsplash.com/photo-1523961131990-5ea7c61b2107"
+                                class="card-img-top rounded" alt="Headphone">
+                            <div class="product-card p-3 text-center">
+                                <h5 class="text-white">Headphone Pink</h5>
+                                <p id="price2" class="text-pink">💲 950,000 VND</p>
+                                <div id="rating2" class="hearts">
+                                    <span data-value="1">❤️</span>
+                                    <span data-value="2">❤️</span>
+                                    <span data-value="3">❤️</span>
+                                    <span data-value="4">🤍</span>
+                                    <span data-value="5">🤍</span>
+                                </div>
+                            </div>
+                            <button class="btn btn-pink">Mua ngay</button>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card p-3 text-center">
+                            <img src="https://images.unsplash.com/photo-1507874457470-272b3c8d8ee2"
+                                class="card-img-top rounded" alt="Microphone">
+                            <div class="product-card p-3 text-center">
+                                <h5 class="text-white">🎸 Guitar Classic</h5>
+                                <p id="price3" class="text-pink">💲 950,000 VND</p>
+                                <div id="rating3" class="hearts">
+                                    <span data-value="1">❤️</span>
+                                    <span data-value="2">❤️</span>
+                                    <span data-value="3">❤️</span>
+                                    <span data-value="4">🤍</span>
+                                    <span data-value="5">🤍</span>
+                                </div>
+                            </div>
+                            <button class="btn btn-pink">Mua ngay</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Auto play both carousels
+        const bannerCarousel = document.querySelector('#bannerCarousel');
+        const productCarousel = document.querySelector('#productCarousel');
+        new bootstrap.Carousel(bannerCarousel, { interval: 3000, ride: 'carousel' });
+        new bootstrap.Carousel(productCarousel, { interval: 3000, ride: 'carousel' });
+
+        function setupRating(ratingId, priceId, basePrice, step, ratingId2, priceId2) {
+            const rating = document.getElementById(ratingId);
+            const price = document.getElementById(priceId);
+            const rating2 = document.getElementById(ratingId2);
+            const price2 = document.getElementById(priceId2);
+
+            rating.addEventListener("click", e => {
+                if (e.target.tagName === "SPAN") {
+                    let val = parseInt(e.target.dataset.value);
+                    let tmp = parseInt(e.target.dataset.value);
+
+                    // đếm số tim hiện tại
+                    let current = Array.from(rating.querySelectorAll("span"))
+                        .filter(s => s.textContent === "❤️").length;
+
+                    // nếu click đúng mức hiện tại → toggle bớt 1 tim
+                    if (val === current) {
+                        val--;
+                    }
+
+                    // cập nhật hiển thị tim
+                    rating.querySelectorAll("span").forEach((s, i) => {
+                        s.textContent = (i < val) ? "❤️" : "🤍";
+                    });
+
+                    // cập nhật giá
+                    price.textContent = "💲 " +
+                        (basePrice + (val - 3) * step).toLocaleString() + " VND";
+                    
+                    if (val !== current) {
+                        price2.textContent = "💲 " +
+                            (basePrice + (val - 5) * step).toLocaleString() + " VND";
+                    }
+
+                    if (ratingId2 === 'rating3') {
+                        price2.textContent = "💲 " +
+                        (basePrice + (val - 1) * step).toLocaleString() + " VND";
+                    }
+                }
+            });
+        }
+
+        // setup: base 950k với 3 tim, mỗi tim thêm/bớt 300k
+        setupRating("rating1", "price1",  2500000 , 300000, "rating3", "price3");
+        setupRating("rating2", "price2", 950000, 300000);
+        setupRating("rating3", "price3", 950000, 300000, "rating1", "price1");
+    </script>
+</body>
+
+</html>

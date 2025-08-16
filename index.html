@@ -30,3 +30,10 @@ layout: layout.html
   <small>({{ oxynot.date | date: "yyyy-MM-dd" }})</small>
 </li>
 {% endfor %}
+
+{% for demo in collections.demome | reverse %}
+<li style="display: none">
+  <a href="{{ demo.url }}">{{ demo.data.title }}</a>
+  <small>({{ demo.date | date: "yyyy-MM-dd" }})</small>
+</li>
+{% endfor %}
