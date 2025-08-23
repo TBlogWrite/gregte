@@ -230,15 +230,29 @@
             });
         }
 
+        // Chọn kiểu đầu ngẫu nhiên: "circle" hoặc "triangle"
+        const headType = Math.random() < 0.5 ? "circle" : "triangle";
         let collisionCount = 0; // đếm số va chạm
         function drawCharacterĐằngẤy(x, y) {
             ctx.strokeStyle = "white";
             ctx.lineWidth = 3;
 
             // Vẽ đầu
-            ctx.beginPath();
-            ctx.arc(x, y, 15, 0, Math.PI * 2);
-            ctx.stroke();
+            if (headType === "circle") {
+                // Vẽ đầu tròn, radius nhỏ hơn
+                const radius = 13; // giảm từ 15 → 10
+                ctx.beginPath();
+                ctx.arc(x, y, radius, 0, Math.PI * 2);
+                ctx.stroke();
+            } else {
+                const size = 10; // giảm từ 10 → 8
+                ctx.beginPath();
+                ctx.moveTo(x, y + size + 9);        // đỉnh dưới
+                ctx.lineTo(x - size, y - size); // góc trái trên
+                ctx.lineTo(x + size, y - size); // góc phải trên
+                ctx.closePath();
+                ctx.stroke();
+            }
 
             // Thân
             ctx.beginPath();
