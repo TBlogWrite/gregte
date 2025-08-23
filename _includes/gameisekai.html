@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Game Ise cai</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            background: #111;
+            overflow: hidden;
+        }
+
+        canvas {
+            display: block;
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+</head>
+
+<body>
+    <div class="modal fade" id="storyModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+          <div class="modal-content bg-dark text-white">
+            <div class="modal-header">
+              <h5 class="modal-title">Vũ trụ mới làm lại từ đầu !</h5>
+              <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="storyText">
+              
+            </div>
+            <div class="modal-body" id="storyTextFun">
+                It’s so fun !!!! (Creater ChatGPT)
+            </div>
+            <div class="modal-footer">
+              <button id="startButton" type="button" class="btn btn-primary" data-bs-dismiss="modal">Đóng</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+    <canvas id="game"></canvas>
+    <script>
+
+        let gameStart = true;
+        window.addEventListener("DOMContentLoaded", () => {
+            // Gán nội dung ban đầu
+            document.getElementById("storyText").innerText = "Chào mừng đến với thế giới đã isekai !\n - Sau một ngày your buồn bả từ name.\n - Bạn ise cai thì thần tiên cho bạn qua thế giới mới.\n" + 
+                "- Một ngày, tôi bất ngờ bị xuyên không sang một thế giới xa lạ, nơi chân tôi dài ra bất thường và ánh mắt mọi người trầm trồ. Chẳng biết tại sao, tôi bị quăng thẳng vào luyện ngục chết chóc, nơi quái vật gầm thét, bẫy rình rập khắp nơi. Nhưng với ý chí và chút may mắn, tôi vượt qua mọi nguy hiểm, luyện được bí kíp tối thượng khiến thiên hạ phải khiếp sợ.\n"
+            +   "- Trong hành trình điên rồ này, tôi gặp người ấy — một bóng hồng vừa bí ẩn vừa mạnh mẽ, khiến tim tôi loạn nhịp. Không dừng lại ở đó, tôi còn gặp những đồng minh kỳ lạ: từ ma nữ lạnh lùng, hiệp sĩ mạnh mẽ, đến pháp sư ngổ ngáo, tất cả đều bị cuốn vào harem nhỏ nhưng… đầy hỗn loạn của tôi!\n"
+            +   "- Giữa những trận chiến nảy lửa, những âm mưu đen tối, và những phép thuật ánh sao lung linh, tôi bước đi, tỏa sáng như ánh sao duy nhất trên bầu trời, chứng minh rằng: không ai có thể ngăn cản tôi viết nên câu chuyện huyền thoại của riêng mình."
+            ;
+            document.getElementById("startButton").addEventListener("click", () => {
+                gameStart = false;
+            });
+            // Lấy modal và hiển thị
+            const storyModal = new bootstrap.Modal(document.getElementById("storyModal"));
+            storyModal.show();
+        });
+
+        const canvas = document.getElementById("game");
+        const ctx = canvas.getContext("2d");
+
+        // cho canvas full màn hình
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        //window.addEventListener("resize", () => {
+        //  canvas.width = window.innerWidth;
+        //  canvas.height = window.innerHeight;
+        //});
+
+        // Người que
+        let player = {
+            x: canvas.width / 2,
+            y: canvas.height - 60,
+            vy: 0,
+            gravity: 0.5,
+            jumpPower: -10,
+            onGround: true
+        };
+
+        // Các hộp bay qua lại
+        let obstacles = [];
+        function createObstacle(y) {
+            let width = 120;
+            let x = Math.random() < 0.5 ? 0 : canvas.width - width;
+            obstacles.push({
+                x: x,
+                y: y,
+                w: width,
+                h: 20,
+                dir: x === 0 ? 1 : -1
+            });
+        }
+
+        const skills = [
+            "Cửu Chuyển Huyền Công",
+            "Nhất Kiếm Kinh Thiên",
+            "Ngũ Lôi Oanh Đỉnh",
+            "Thái Hư Luyện Thể Quyết",
+            "Vạn Kiếm Quy Tông",
+            "Chân Long Hóa Thân",
+            "Đại Nhật Như Lai Chưởng",
+            "Âm Dương Nhị Khí Luân",
+            "Cửu U Ma Diễm Quyết",
+            "Huyết Thần Tử Luyện Đại Pháp"
+        ];
+
+        function createObstacles() {
+            obstacles = [];
+            for (let i = 0; i < skills.length; i++) {
+                createObstacle(canvas.height - (i + 1) * 150);
+            }
+        }
+
+        createObstacles();
+
+        window.addEventListener("resize", () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            createObstacles(); // tạo lại đủ 10 hộp
+        });
+
+        function drawIsoscelesTriangle(x, y, size) {
+            ctx.beginPath();
+            ctx.moveTo(x, y + size);              // đỉnh dưới
+            ctx.lineTo(x - size * 0.75, y - size);// góc trái
+            ctx.lineTo(x + size * 0.75, y - size);// góc phải
+            ctx.closePath();
+            ctx.stroke();
+        }
+
+
+        let longtail = 50;
+        // Vẽ người que
+        function drawStickman(x, y) {
+            ctx.strokeStyle = "white";
+            ctx.lineWidth = 4;
+
+            // đầu
+            drawIsoscelesTriangle(x, y - 30, 15);
+
+            // thân
+            ctx.beginPath();
+            ctx.moveTo(x, y - 15);
+            ctx.lineTo(x, y + 25);
+            ctx.stroke();
+
+            // tay
+            ctx.beginPath();
+            ctx.moveTo(x, y - 5);
+            ctx.lineTo(x - 20, y + 10);
+            ctx.moveTo(x, y - 5);
+            ctx.lineTo(x + 20, y + 10);
+            ctx.stroke();
+
+            // chân
+            ctx.beginPath();
+            ctx.moveTo(x, y + 25);
+            ctx.lineTo(x - 15, y + longtail); // chân trái
+            ctx.moveTo(x, y + 25);
+            ctx.lineTo(x + 15, y + longtail); // chân phải
+            ctx.stroke();
+        }
+
+        // Điều khiển: nhảy
+        window.addEventListener("keydown", (e) => {
+            if ((e.code === "Space" || e.code === "ArrowUp") && player.onGround) {
+                player.vy = player.jumpPower;
+                player.onGround = false;
+            }
+        });
+
+        let gameOver = false;
+
+
+        function drawSkillBoxes() {
+            ctx.font = "16px Arial";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+
+            skills.forEach((skill, i) => {
+                let x = 150;
+                let y = 50 + i * 50; // mỗi ô cách nhau 50px
+                let w = 300;
+                let h = 40;
+
+                // Vẽ hộp đỏ
+                ctx.fillStyle = "red";
+                ctx.fillRect(x, y, w, h);
+
+                // Vẽ viền
+                ctx.strokeStyle = "black";
+                ctx.strokeRect(x, y, w, h);
+
+                // Viết chữ trắng
+                ctx.fillStyle = "white";
+                ctx.fillText(skill, x + w / 2, y + h / 2);
+            });
+        }
+
+        let particles = [];
+
+        function spawnSmoke(x, y) {
+            for (let i = 0; i < 3; i++) {
+                particles.push({
+                    x: x + Math.random() * 20 - 10,
+                    y: y + Math.random() * 20 - 10,
+                    vx: (Math.random() - 0.5) * 1,
+                    vy: -Math.random() * 1.5 - 0.5,
+                    alpha: 1,
+                    radius: Math.random() * 6 + 4
+                });
+            }
+        }
+
+        function updateSmoke(ctx) {
+            particles.forEach((p, i) => {
+                p.x += p.vx;
+                p.y += p.vy;
+                p.alpha -= 0.02;
+                if (p.alpha <= 0) particles.splice(i, 1);
+
+                ctx.beginPath();
+                ctx.fillStyle = `rgba(255,255,255,${p.alpha})`;
+                ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                ctx.fill();
+            });
+        }
+
+        let collisionCount = 0; // đếm số va chạm
+        function drawCharacterĐằngẤy(x, y) {
+            ctx.strokeStyle = "white";
+            ctx.lineWidth = 3;
+
+            // Vẽ đầu
+            ctx.beginPath();
+            ctx.arc(x, y, 15, 0, Math.PI * 2);
+            ctx.stroke();
+
+            // Thân
+            ctx.beginPath();
+            ctx.moveTo(x, y + 15);
+            ctx.lineTo(x, y + 60);
+            ctx.stroke();
+
+            // Váy (tam giác cân)
+            ctx.beginPath();
+            ctx.moveTo(x - 20, y + 60);  // góc trái
+            ctx.lineTo(x + 20, y + 60);  // góc phải
+            ctx.lineTo(x, y + 30);       // đỉnh váy
+            ctx.closePath();
+            ctx.stroke();
+            ctx.fillStyle = "white";      // màu váy
+            ctx.fill();
+
+            // Tay
+            ctx.beginPath();
+            ctx.moveTo(x, y + 25);
+            ctx.lineTo(x - 25, y + 40);
+            ctx.moveTo(x, y + 25);
+            ctx.lineTo(x + 25, y + 40);
+            ctx.stroke();
+
+            // Chân
+            ctx.beginPath();
+            ctx.moveTo(x, y + 60);
+            ctx.lineTo(x - 15, y + 90);
+            ctx.moveTo(x, y + 60);
+            ctx.lineTo(x + 15, y + 90);
+            ctx.stroke();
+
+            // Vẽ bệ ở góc phải trên cùng
+        }
+        function drawHUD() {
+            // Tạo hiệu ứng màu nhấp nháy theo thời gian
+            let t = Date.now() / 300; // tốc độ đổi màu
+            let r = Math.floor(128 + 127 * Math.sin(t));
+            let g = Math.floor(128 + 127 * Math.sin(t + 2));
+            let b = Math.floor(128 + 127 * Math.sin(t + 4));
+            let color = `rgb(${r},${g},${b})`;
+
+            ctx.fillStyle = color;
+            ctx.font = "bold 24px Arial";
+            ctx.fillText("Lụm được bí kíp: " + collisionCount, 120, 40);
+        }
+
+        function drawZoom() {
+            // Tạo hiệu ứng màu nhấp nháy theo thời gian
+            let t = Date.now() / 300; // tốc độ đổi màu
+            let r = Math.floor(128 + 127 * Math.sin(t));
+            let g = Math.floor(128 + 127 * Math.sin(t + 2));
+            let b = Math.floor(128 + 127 * Math.sin(t + 4));
+            let color = `rgb(${r},${g},${b})`;
+
+            ctx.fillStyle = color;
+            ctx.font = "bold 24px Arial";
+            ctx.textAlign = "right";   // căn phải
+            ctx.fillText("Nếu không nhìn thấy nhớ zoom out nghe !", canvas.width - 20, 40);
+        }
+
+        let gameEnded = false;
+        function checkEndCondition() {
+            if (!gameEnded && Math.abs(player.y - npc.y) < 5) {
+                gameEnded = true;
+                alert("🎉 Bạn đã tìm được đằng ấy ! Thế giới bạn đã isekai qua đã OK!");
+            }
+        }
+
+        let platformW = 120;
+        let platformH = 20;
+        let platformX = canvas.width - platformW - 20;
+        let platformY = 180;
+
+        let npc = {
+            x: platformX + platformW / 2,
+            y: platformY - 90
+        }
+
+        let thanhTien = false;
+        let lastCollision = false; // cờ lưu trạng thái va chạm trước đó
+        function update() {
+
+            if (gameStart) {
+                requestAnimationFrame(update);
+                return; // game chưa bắt đầu
+            }
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            if (!gameOver) {
+                // vật lý nhân vật
+                player.y += player.vy;
+                player.vy += player.gravity;
+
+                // chạm đất
+                let groundLevel = canvas.height - 60 - longtail * 1; // tùy tỉ lệ
+                if (player.y >= groundLevel) {
+                    player.y = groundLevel;
+                    player.vy = 0;
+                    player.onGround = true;
+                }
+
+                // vẽ người que
+                drawStickman(player.x, player.y);
+
+                ctx.fillStyle = "gray";
+                ctx.fillRect(platformX, platformY, platformW, platformH);
+                drawCharacterĐằngẤy(npc.x, npc.y);
+                drawHUD();
+                drawZoom();
+
+                obstacles.forEach((obs, i) => {
+                    // di chuyển
+                    obs.x += 3 * obs.dir;
+                    if (obs.x < 0 || obs.x + obs.w > canvas.width) obs.dir *= -1;
+
+                    // vẽ hộp trắng mờ
+                    ctx.fillStyle = "rgba(255,255,255,0.7)";
+                    let scale = 1.5; // phóng to 150%
+                    ctx.fillRect(
+                        obs.x - (obs.w * (scale - 1)) / 2,  // dịch trái để hộp nở đều 2 bên
+                        obs.y - (obs.h * (scale - 1)) / 2,  // dịch lên để hộp nở đều 2 phía
+                        obs.w * scale,
+                        obs.h * scale
+                    );
+
+                    // spawn khói ở trên hộp
+                    spawnSmoke(obs.x + obs.w / 2, obs.y);
+
+                    // vẽ chữ võ công
+                    ctx.fillStyle = "black";
+                    ctx.font = "14px Arial";
+                    ctx.textAlign = "center";
+                    ctx.textBaseline = "middle";
+                    let skill = skills[i % skills.length];
+                    ctx.fillText(skill, obs.x + obs.w / 2, obs.y + obs.h / 2);
+                    let thanhTien = false;
+                    // kiểm tra va chạm
+                    if (
+                        player.x > obs.x &&
+                        player.x < obs.x + obs.w &&
+                        player.y > obs.y - 10 &&
+                        player.y < obs.y + obs.h + 40
+                    ) {
+                        longtail += 25 ;
+                        player.y -= 100;
+                        thanhTien = true;
+                        if (!lastCollision) {
+                            collisionCount += 1;
+                            lastCollision = true;
+            
+                        }
+                    }
+
+                });
+                if (!thanhTien) lastCollision = false;
+                // chỉ tăng collisionCount đúng 1 lần khi va chạm mới xảy ra
+                checkEndCondition();
+
+                // sau khi vẽ obstacles, vẽ hiệu ứng khói
+                updateSmoke(ctx);
+            } else {
+                ctx.fillStyle = "yellow";
+                ctx.font = "bold 48px Arial";
+                ctx.fillText("GAME OVER", canvas.width / 2 - 120, canvas.height / 2);
+            }
+
+            requestAnimationFrame(update);
+        }
+        update();
+    </script>
+</body>
+
+</html>

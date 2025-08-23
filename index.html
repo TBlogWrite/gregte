@@ -37,3 +37,11 @@ layout: layout.html
   <small>({{ demo.date | date: "yyyy-MM-dd" }})</small>
 </li>
 {% endfor %}
+
+
+{% for gameisekai in collections.gameisekai | reverse %}
+<li style="">
+  <a href="{{ gameisekai.url }}">{{ gameisekai.data.title }}</a>
+  <small>({{ gameisekai.date | date: "yyyy-MM-dd" }})</small>
+</li>
+{% endfor %}

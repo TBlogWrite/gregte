@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Zdog – Người đi xe đạp dưới hàng Hoa Anh Đào</title>
+  <style>
+    html, body { height: 100%; margin: 0; }
+    body { 
+      background: radial-gradient(1200px 800px at 70% 10%, #ffeaf6 0%, #ffd9ee 40%, #f7c0e0 65%, #f0a9d4 100%);
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+      color:#2b2140;
+    }
+    .wrap { position: fixed; inset: 0; display:grid; place-items:center; }
+    canvas { width: min(92vw, 820px); height: min(92vw*0.6, 492px); max-width: 820px; max-height: 492px; display:block; }
+    .hud { position: fixed; left: 14px; top: 14px; background: rgba(255,255,255,.6); padding: 10px 12px; border-radius: 12px; border:1px solid rgba(255,255,255,.9); backdrop-filter: blur(6px); box-shadow:0 10px 30px rgba(0,0,0,.15); }
+    .hud h1 { margin:0 0 4px; font-size:14px; }
+    .hud p { margin:0; font-size:12px; opacity:.8; }
+    .credit { position: fixed; right: 12px; bottom: 10px; font-size:12px; opacity:.8; }
+    a { color:#6a2ea8; text-decoration:none; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <canvas class="zdog-canvas" width="960" height="576"></canvas>
+  </div>
+  <div class="hud">
+    <h1>🚲 Người đi xe đạp • Zdog</h1>
+    <p>Kéo để xoay cảnh • Nhấp để tạm dừng</p>
+  </div>
+  <div class="credit">Powered by <a href="https://zzz.dog/" target="_blank" rel="noreferrer">Zdog</a></div>
+
+  <script>
+  (function(){
+    const sources = [
+      'https://unpkg.com/zdog@1/dist/zdog.min.js',
+      'https://cdn.jsdelivr.net/npm/zdog@1/dist/zdog.min.js',
+      'https://cdn.jsdelivr.net/npm/zdog@1.1.3/dist/zdog.dist.min.js'
+    ];
+    function loadScript(src){
+      return new Promise((resolve, reject)=>{
+        const s = document.createElement('script');
+        s.src = src; s.async = true; s.onload = resolve; s.onerror = reject; document.head.appendChild(s);
+      });
+    }
+    (async ()=>{
+      let loaded = false;
+      for (const src of sources){
+        try { await loadScript(src); loaded = true; break; } catch(e){}
+      }
+      const canvas = document.querySelector('.zdog-canvas');
+      if (!loaded || !window.Zdog){
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#2b2140'; ctx.fillRect(0,0,canvas.width,canvas.height);
+        ctx.fillStyle = '#ffb0de'; ctx.font = '20px system-ui, sans-serif';
+        ctx.fillText('Không tải được Zdog từ CDN. Hãy kiểm tra mạng/AdBlock.', 24, 40);
+        ctx.fillText('Thử tắt chặn quảng cáo hoặc mở bằng HTTPS.', 24, 70);
+        return;
+      }
+
+      // --- Illustration setup ---
+      const illo = new Zdog.Illustration({
+        element: '.zdog-canvas',
+        dragRotate: true,
+        zoom: 1.1,
+        rotate: { x: -0.2, y: 0.65 },
+      });
+
+      // Helpers
+      const TAU = Zdog.TAU;
+      const rand = (a,b)=> a + Math.random()*(b-a);
+
+      // --- Ground / road ---
+      const ground = new Zdog.Anchor({ addTo: illo });
+
+      const road = new Zdog.RoundedRect({
+        addTo: ground,
+        width: 1000,
+        height: 120,
+        cornerRadius: 14,
+        translate: { y: 80, z: 0 },
+        rotate: { x: 0.07 },
+        stroke: 30,
+        color: '#2b2f3f',
+        fill: true,
+      });
+
+      // dashed center line (animated offset)
+      const dashGroup = new Zdog.Anchor({ addTo: ground, translate: { y: 80, z: 1 } });
+      const dashCount = 16;
+      const dashes = [];
+      for (let i = 0; i < dashCount; i++) {
+        dashes.push(new Zdog.RoundedRect({
+          addTo: dashGroup,
+          width: 36,
+          height: 6,
+          cornerRadius: 3,
+          stroke: 12,
+          color: '#e4e8ff',
+          translate: { x: -450 + i*60, z: 0 },
+          fill: true,
+        }));
+      }
+
+      // --- Cherry trees lane ---
+      const trees = new Zdog.Anchor({ addTo: illo });
+
+      function makeTree(x, side=1) {
+        const base = new Zdog.Anchor({ addTo: trees, translate: { x, y: 40, z: side*140 }, rotate: { x: -0.1 } });
+        // trunk
+        new Zdog.Shape({
+          addTo: base,
+          path: [ { x:0, y:0 }, { x: 0, y: -80 } ],
+          stroke: 18,
+          color: '#7b513a',
+        });
+        // branches
+        new Zdog.Shape({ addTo: base, path: [ {x: 0, y: -40, z: 0}, {x: 20*side, y: -70, z: 10} ], stroke: 10, color:'#7b513a' });
+        new Zdog.Shape({ addTo: base, path: [ {x: 0, y: -55, z: 0}, {x: -18*side, y: -85, z: -12} ], stroke: 9, color:'#7b513a' });
+
+        // canopy blobs
+        const cloud = new Zdog.Group({ addTo: base, translate: { y: -95 } });
+        const pinks = ['#ffd4ec','#ffc1e5','#ffb0de','#ffa1d7'];
+        for (let i=0;i<12;i++) {
+          new Zdog.Ellipse({
+            addTo: cloud,
+            diameter: rand(36, 62),
+            stroke: rand(22, 36),
+            color: pinks[Math.floor(rand(0,pinks.length))],
+            translate: { x: rand(-32, 32), y: rand(-6, 8), z: rand(-20, 20) },
+            rotate: { x: rand(-.6,.6), y: rand(-.6,.6) },
+            fill: true,
+          });
+        }
+
+        return base;
+      }
+
+      const treeSpacing = 140;
+      const treeCountPerSide = 8;
+      const treeAnchors = [];
+      for (let i=-treeCountPerSide; i<=treeCountPerSide; i++) {
+        const x = i * treeSpacing;
+        treeAnchors.push(makeTree(x,  1));
+        treeAnchors.push(makeTree(x+70, -1));
+      }
+
+      // falling petals (particles)
+      const petalLayer = new Zdog.Anchor({ addTo: illo });
+      const petals = [];
+      const petalTotal = 80;
+      for (let i=0;i<petalTotal;i++) {
+        const p = new Zdog.Shape({
+          addTo: petalLayer,
+          path: [ { x:0, y:0 }, { x: 4, y: 2 } ],
+          stroke: 4,
+          color: ['#ffd4ec','#ffc1e5','#ffb0de','#ffa1d7'][Math.floor(Math.random()*4)],
+          translate: { x: rand(-500,500), y: rand(-40, 120), z: rand(-160,160) },
+        });
+        p.vx = rand(-0.6,-0.2); p.vy = rand(0.3,0.9); p.vz = rand(-0.15,0.15); p.rot = rand(0,Zdog.TAU); p.vr = rand(-0.03,0.03);
+        petals.push(p);
+      }
+
+      // --- Cyclist ---
+      const bike = new Zdog.Anchor({ addTo: illo, translate: { y: 40, z: 0 } });
+
+      // Wheels
+      const wheelRadius = 38;
+      function makeWheel(x) {
+        const group = new Zdog.Anchor({ addTo: bike, translate: { x, y: 0, z: 0 } });
+        new Zdog.Ellipse({ addTo: group, diameter: wheelRadius*2, stroke: 12, color: '#1a1a1e' });
+        new Zdog.Ellipse({ addTo: group, diameter: wheelRadius*2-16, stroke: 5, color: '#cfd8ff' });
+        new Zdog.Shape({ addTo: group, path: [ {x:0,y:-wheelRadius+12}, {x:0,y:wheelRadius-12} ], stroke:2, color:'#e8f0ff' });
+        new Zdog.Shape({ addTo: group, path: [ {x:-wheelRadius+12,y:0}, {x:wheelRadius-12,y:0} ], stroke:2, color:'#e8f0ff' });
+        new Zdog.Ellipse({ addTo: group, diameter: 8, stroke: 8, color:'#dfe6ff' });
+        return group;
+      }
+
+      const rearWheel  = makeWheel(-70);
+      const frontWheel = makeWheel( 70);
+
+      // Frame
+      const frame = new Zdog.Anchor({ addTo: bike });
+      const tube = (a,b,color='#5c8dff',stroke=10)=> new Zdog.Shape({ addTo: frame, path:[a,b], stroke, color });
+
+      const bb = { x: -20, y: -10, z: 0 }; // bottom bracket
+      tube({x:-50,y:-10},{x: 10,y:-28}); // down tube
+      tube({x: 10,y:-28},{x: 50,y:-20}); // top tube
+      tube({x:-50,y:-10},{x:-20,y:-50}); // seat tube lower
+      tube({x:-20,y:-50},{x: 10,y:-28}); // seat tube to top tube
+      tube({x:-50,y:-10},{x:-70,y:0});   // chain stay
+      tube({x:-20,y:-50},{x:-70,y:0});   // seat stay
+      // fork + stem
+      tube({x:50,y:-20},{x:70,y:0}, '#5c8dff', 9);
+      tube({x:50,y:-20},{x:60,y:-30}, '#b6c6ff', 7); // stem
+      new Zdog.RoundedRect({ addTo: frame, width: 40, height: 6, cornerRadius:3, stroke: 8, color:'#141821', translate:{ x:60, y:-32, z:0 } });
+
+      // Crank + pedals
+      const crank = new Zdog.Anchor({ addTo: bike, translate: bb });
+      new Zdog.Ellipse({ addTo: crank, diameter: 14, stroke: 10, color:'#c9d6ff' });
+      const armL = new Zdog.Shape({ addTo: crank, path:[{x:0,y:0},{x:0,y:14}], stroke:6, color:'#b8c6ff', translate:{x:0,y:0} });
+      const armR = new Zdog.Shape({ addTo: crank, path:[{x:0,y:0},{x:0,y:-14}], stroke:6, color:'#b8c6ff', translate:{x:0,y:0} });
+      new Zdog.RoundedRect({ addTo: armL, width: 14, height: 6, cornerRadius:3, stroke:6, color:'#141821', translate:{ y: 14 } });
+      new Zdog.RoundedRect({ addTo: armR, width: 14, height: 6, cornerRadius:3, stroke:6, color:'#141821', translate:{ y:-14 } });
+
+      // Saddle
+      new Zdog.RoundedRect({ addTo: bike, width: 26, height: 8, cornerRadius: 4, stroke: 10, color:'#1f2433', translate: { x: -20, y: -52, z: 0 } });
+
+      // Handle grips
+      new Zdog.Shape({ addTo: bike, path:[{x: 40,y:-30}, {x:82,y:-34}], stroke: 8, color:'#1f2433' });
+
+      // Rider
+      const rider = new Zdog.Anchor({ addTo: bike });
+
+      // torso
+      new Zdog.RoundedRect({ addTo: rider, width: 26, height: 34, cornerRadius: 8, stroke: 16, color:'#3f6cff', translate:{ x:-4, y:-45, z:0 } });
+
+      // head
+      const head = new Zdog.Ellipse({ addTo: rider, diameter: 22, stroke: 22, color:'#ffe2c6', translate:{ x: 4, y:-70, z: 0 } });
+      new Zdog.Hemisphere({ addTo: head, diameter: 20, stroke: 8, color:'#222a3a', translate:{ y: -2 } });
+
+      // arms
+      const armLAnchor = new Zdog.Anchor({ addTo: rider, translate:{ x: -6, y: -50, z: 6 } });
+      const armRAnchor = new Zdog.Anchor({ addTo: rider, translate:{ x: -6, y: -50, z: -6 } });
+      new Zdog.Shape({ addTo: armLAnchor, path:[{}, { x: 36, y: -6, z: -4 }], stroke: 10, color:'#3f6cff' });
+      new Zdog.Shape({ addTo: armRAnchor, path:[{}, { x: 36, y: -6, z:  4 }], stroke: 10, color:'#3f6cff' });
+      new Zdog.Ellipse({ addTo: armLAnchor, diameter: 8, stroke: 8, color:'#ffe2c6', translate:{ x: 70, y: -30, z: -4 } });
+      new Zdog.Ellipse({ addTo: armRAnchor, diameter: 8, stroke: 8, color:'#ffe2c6', translate:{ x: 70, y: -30, z:  4 } });
+
+      // legs
+      const hipL = new Zdog.Anchor({ addTo: rider, translate:{ x: -14, y: -38, z: 5 } });
+      const hipR = new Zdog.Anchor({ addTo: rider, translate:{ x: -14, y: -38, z: -5 } });
+
+      const thighL = new Zdog.Shape({ addTo: hipL, path:[{}, { x: 16, y: 22 }], stroke: 10, color:'#ff3f77' });
+      const calfL  = new Zdog.Shape({ addTo: thighL, path:[{}, { x: 16, y: 22 }], stroke: 9, color:'#ff7aa5', translate:{ x: 16, y: 22 } });
+      new Zdog.RoundedRect({ addTo: calfL, width: 12, height: 6, cornerRadius:3, stroke: 8, color:'#222833', translate:{ x: 16, y: 22 } });
+
+      const thighR = new Zdog.Shape({ addTo: hipR, path:[{}, { x: 16, y: 22 }], stroke: 10, color:'#ff3f77' });
+      const calfR  = new Zdog.Shape({ addTo: thighR, path:[{}, { x: 16, y: 22 }], stroke: 9, color:'#ff7aa5', translate:{ x: 16, y: 22 } });
+      new Zdog.RoundedRect({ addTo: calfR, width: 12, height: 6, cornerRadius:3, stroke: 8, color:'#222833', translate:{ x: 16, y: 22 } });
+
+      new Zdog.Hemisphere({ addTo: bike, diameter: 10, stroke: 4, color:'#f3f6ff', translate:{ x: 74, y: -33, z: -6 } });
+
+      // --- Animation state ---
+      let isPaused = false;
+      let t = 0;
+      let speed = 2.2; // overall scene speed
+
+      function animate() {
+        if (!isPaused) {
+          t += 0.016 * speed;
+
+          // move road dashes
+          dashGroup.translate.x = (dashGroup.translate.x - 2.4 * speed);
+          if (dashGroup.translate.x < -60) dashGroup.translate.x += 60;
+
+          // move trees
+          const vxNear = -1.6 * speed;   // near side moves faster
+          const vxFar  = -1.0 * speed;
+          for (const a of treeAnchors) {
+            const isFar = a.translate.z < 0; // negative z means far side
+            a.translate.x += isFar ? vxFar : vxNear;
+            if (a.translate.x < -treeSpacing*(treeCountPerSide+1)) {
+              a.translate.x += (treeSpacing*(treeCountPerSide*2+2));
+            }
+          }
+
+          // petals
+          for (const p of petals) {
+            p.translate.x += p.vx * speed*0.9;
+            p.translate.y += p.vy * speed*0.9;
+            p.translate.z += p.vz * speed*0.9;
+            p.rotate.z += p.vr;
+            if (p.translate.y > 130 || p.translate.x < -520) {
+              p.translate.x = rand(300, 520);
+              p.translate.y = rand(-40, 20);
+              p.translate.z = rand(-160, 160);
+            }
+          }
+
+          // wheels + crank
+          frontWheel.rotate.z -= 0.12 * speed;
+          rearWheel.rotate.z  -= 0.12 * speed;
+          crank.rotate.z      -= 0.12 * speed;
+
+          const phase = crank.rotate.z;
+          const swing = Math.sin(phase);
+          const bend  = Math.cos(phase);
+          thighL.rotate.z =  0.9 * swing;
+          calfL.rotate.z  =  0.6 * bend;
+          thighR.rotate.z =  0.9 * Math.sin(phase + Math.PI);
+          calfR.rotate.z  =  0.6 * Math.cos(phase + Math.PI);
+
+          rider.translate.y = -2 + Math.sin(t*2) * 1.2;
+        }
+
+        illo.updateRenderGraph();
+        requestAnimationFrame(animate);
+      }
+
+      animate();
+
+      document.querySelector('.zdog-canvas').addEventListener('click', ()=>{ isPaused = !isPaused; });
+      window.addEventListener('keydown', (e)=>{
+        if (e.key === 'ArrowUp') speed = Math.min(4.2, speed + 0.2);
+        if (e.key === 'ArrowDown') speed = Math.max(0.6, speed - 0.2);
+      });
+    })();
+  })();
+</script>
+</body>
+</html>
