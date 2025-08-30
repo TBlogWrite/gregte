@@ -45,3 +45,11 @@ layout: layout.html
   <small>({{ gameisekai.date | date: "yyyy-MM-dd" }})</small>
 </li>
 {% endfor %}
+
+
+{% for htspmarble in collections.htspmarble | reverse %}
+<li style="">
+  <a href="{{ htspmarble.url }}">{{ htspmarble.data.title }}</a>
+  <small>({{ htspmarble.date | date: "yyyy-MM-dd" }})</small>
+</li>
+{% endfor %}

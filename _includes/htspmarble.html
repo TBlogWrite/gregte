@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dây ôm viên bi (anchor gần nhau)</title>
+  <style>
+
+    body {
+        background: #111;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start; /* trên mobile, bắt đầu từ trên */
+        align-items: center;
+        margin: 0;
+        padding: 10px; /* tránh sát mép màn hình */
+      }
+      
+      canvas {
+        background: #000;
+        margin: 10px 0;
+        width: 100%;          /* full width màn hình */
+        max-width: 600px;     /* giới hạn rộng cho desktop */
+        height: auto;         /* tự động theo tỷ lệ */
+        aspect-ratio: 3/2;    /* giữ tỉ lệ 600x400 */
+        cursor: grab;
+    }
+      
+      .btns {
+        display: flex;
+        flex-wrap: wrap;      /* nếu màn hình nhỏ, xuống hàng */
+        gap: 6px;
+        margin-bottom: 10px;
+      }
+      
+      button {
+        padding: 6px 10px;
+        font-size: 14px;
+      }
+
+  </style>
+</head>
+<body>
+
+<canvas id="b" width="600" height="400"></canvas>
+<br/>
+<div class="btns">
+    <button onclick="manualMode=true;mode='bottom';draw()">Ôm dưới</button>
+    <button onclick="manualMode=true;mode='top';draw()">Ôm trên</button>
+  </div>
+<canvas id="c" width="600" height="400"></canvas>
+<script>
+const canvasb = document.getElementById("b");
+const canvasc = document.getElementById("c");
+const ctx1 = canvasb.getContext("2d");
+const ctx2 = canvasc.getContext("2d");
+
+
+function drawCurves() {
+    ctx1.clearRect(0,0,canvasb.width,canvasb.height);
+    const cx = canvasb.width/2;
+    const cy = canvasb.height/2;
+    const H = 250;    // chiều cao
+    const R = 200;    // bán kính cơ bản
+    const numLines = 80; // số đường (tăng/giảm tuỳ ý)
+  
+    for (let i=0; i<numLines; i++){
+        ctx1.beginPath();
+        ctx1.strokeStyle = "lime";
+        ctx1.lineWidth = 1;
+  
+      const angle = (i / numLines) * 2*Math.PI; // chia đều xung quanh
+  
+      for (let t=-1; t<=1; t+=0.01){
+        const y = cy + t*H/2;
+        // bán kính nhỏ nhất ở giữa (t=0)
+        const r = R * (1 - 0.6*Math.exp(-6*t*t));
+        const x = cx + r * Math.cos(angle);
+        ctx1.lineTo(x, y);
+      }
+  
+      ctx1.stroke();
+    }
+  }
+  const cx = canvasb.width/2;
+const cy = canvasb.height/2;
+const H = 250;    // chiều cao
+const R = 200;    // bán kính cơ bản
+const numLines = 80; // số đường cong
+
+let tBall = -1;   // vị trí viên bi theo trục (-1 trên, 0 giữa, 1 dưới)
+let speed = 0.01; // tốc độ rơi
+  function drawBall() {
+    // toạ độ viên bi theo tBall
+    const y = cy + tBall * H/2;
+    const r = R * (1 - 0.6*Math.exp(-6*tBall*tBall)); 
+    const x = cx; // cho bi ở giữa trục
+  
+    // bán kính viên bi: lớn ở trên/dưới, nhỏ nhất ở giữa
+    const ballRadius = 15 * (1 - 0.7*Math.exp(-6*tBall*tBall));
+  
+    ctx1.beginPath();
+    ctx1.fillStyle = "red";
+    ctx1.arc(x, y, ballRadius, 0, 2*Math.PI);
+    ctx1.fill();
+  }
+  
+  function animate2() {
+    ctx1.clearRect(0,0,canvasb.width,canvasb.height);
+    drawCurves();
+    drawBall();
+  
+    tBall += speed;
+    if (tBall > 1) tBall = -1; // lặp lại
+  
+    requestAnimationFrame(animate2);
+  }
+
+  animate2();
+  
+drawCurves();
+
+let ball = {x:300, y:220, r:27.75};
+// 2 điểm anchor gần nhau
+let anchor1 = {x:270, y:80};
+let anchor2 = {x:330, y:80};
+
+let dragTarget = null;
+let modeToUse;
+let manualMode = true;
+let mode = 'bottom'; // hoặc 'top'
+
+function draw(){
+    ctx2.clearRect(0,0,canvasc.width,canvasc.height);
+  
+    // Vẽ bi
+    ctx2.beginPath();
+    ctx2.arc(ball.x, ball.y, ball.r, 0, Math.PI*2);
+    ctx2.fillStyle="red";
+    ctx2.fill();
+  
+    let tx1,ty1,tx2,ty2,a1,a2;
+    let t = 0.8; // độ cong
+
+    let arcClockwise;
+
+    console.log(manualMode);
+
+    if (manualMode) {
+        modeToUse = mode; // dùng mode do button chọn
+    } else {
+        modeToUse = (ball.x < canvasc.width/2) ? "top" : "bottom"; // tự động
+    }
+  
+    if (modeToUse==="top"){ 
+      a1 = Math.PI * 1.25;   // 225°
+      a2 = Math.PI * 1.75;   // 315°
+    } else {
+      a1 = Math.PI * 1.0625;   // 191.25°
+      a2 = Math.PI * 1.9375;   // 348.75°
+    }
+  
+    tx1 = ball.x + ball.r * Math.cos(a1);
+    ty1 = ball.y + ball.r * Math.sin(a1);
+    tx2 = ball.x + ball.r * Math.cos(a2);
+    ty2 = ball.y + ball.r * Math.sin(a2);
+  
+    // Hàm lấy midpoint uốn cong
+    function getMid(x1,y1,x2,y2,cx,cy,t){
+      let mx=(x1+x2)/2, my=(y1+y2)/2;
+      mx = mx*(1-t)+cx*t;
+      my = my*(1-t)+cy*t;
+      return {x:mx,y:my};
+    }
+  
+    ctx2.beginPath();
+    ctx2.moveTo(anchor1.x, anchor1.y);
+  
+    // --- uốn cong tiếp tuyến trái với anchor1 ---
+    let mid1 = getMid(anchor1.x, anchor1.y, tx1, ty1, ball.x, ball.y, t);
+    ctx2.quadraticCurveTo(mid1.x, mid1.y, tx1, ty1);
+  
+    // --- vẽ cung tròn quanh bi ---
+    ctx2.arc(ball.x, ball.y, ball.r, a1, a2, modeToUse==="top"?false:true);
+  
+    // --- uốn cong tiếp tuyến phải với anchor2 ---
+    let mid2 = getMid(anchor2.x, anchor2.y, tx2, ty2, ball.x, ball.y, t);
+    ctx2.quadraticCurveTo(mid2.x, mid2.y, anchor2.x, anchor2.y);
+  
+    ctx2.strokeStyle="white";
+    ctx2.lineWidth=2;
+    ctx2.stroke();
+  
+    // vẽ anchor
+    ctx2.fillStyle="cyan";
+    [anchor1, anchor2].forEach(a=>{
+      ctx2.beginPath();
+      ctx2.arc(a.x,a.y,5,0,Math.PI*2);
+      ctx2.fill();
+    });
+
+// --- vẽ time line xanh lá dài vô tận ---
+ctx2.beginPath();
+let timeLineCurrY = (anchor1.y + anchor2.y) / 2; // ngang giữa hai anchor
+ctx2.moveTo(0, timeLineCurrY);             // bắt đầu từ cực trái canvasc
+ctx2.lineTo(canvasc.width, timeLineCurrY); // kéo dài tới cực phải canvasc
+ctx2.strokeStyle = "lime"; // màu xanh lá
+ctx2.lineWidth = 2;
+ctx2.stroke();
+
+// --- vẽ chữ trên time line ---
+ctx2.fillStyle = "lime";
+ctx2.font = "16px monospace";
+ctx2.textAlign = "left";        // chữ nằm bên trái
+ctx2.textBaseline = "bottom";   // chữ nằm trên line
+ctx2.fillText("time line current", 5, timeLineCurrY - 2);
+
+// --- vẽ time line ---
+// ctx2.beginPath();
+// let timeLineY = ball.y + ball.r + 10; // vị trí line
+// // Điểm vàng
+// let points = [
+//   {x:0, y:timeLineY},   // 1
+//   {x:ball.x - 100, y:timeLineY},  // 2
+//   {x:ball.x, y:timeLineY},  // 3
+//   {x:ball.x + 100, y:timeLineY},  // 4
+// ];
+// 
+// let amplitude = 40; // độ cong xuống cho đoạn 2->4
+// 
+// ctx2.strokeStyle="white";
+// ctx2.lineWidth=2;
+// ctx2.beginPath();
+// 
+// // 1 -> 2 thẳng
+// ctx2.moveTo(points[0].x, points[0].y);
+// ctx2.lineTo(points[1].x, points[1].y);
+// 
+// // 2 -> 4 cong xuống (bỏ qua điểm 3)
+// let midX = (points[1].x + points[3].x)/2;
+// let midY = (points[1].y + points[3].y)/2 + amplitude;
+// ctx2.moveTo(points[1].x, points[1].y);
+// ctx2.quadraticCurveTo(midX, midY, points[3].x, points[3].y);
+// 
+// // 4 -> dài vô hạn về phải
+// ctx2.moveTo(points[3].x, points[3].y);
+// ctx2.lineTo(canvasc.width + 1000, points[3].y); // kéo dài vô hạn về bên phải
+// 
+// ctx2.stroke();
+// ctx2.moveTo(0, timeLineY);
+// ctx2.lineTo(canvasc.width, timeLineY);
+// ctx2.strokeStyle = "white";
+// ctx2.lineWidth = 1;
+// ctx2.stroke();
+
+// --- vẽ chữ trên time line ---
+// --- vẽ chữ trên time line bên trái ---
+
+ctx2.fillStyle = "white";
+ctx2.font = "16px monospace";    // font mono
+ctx2.textAlign = "left";         // căn trái
+ctx2.textBaseline = "bottom";    // nằm trên line
+ctx2.fillText("time line absorb", 5, timeLineY - 2); // 5px cách mép trái
+
+
+}
+
+
+let gorilla = { x: 0, speed: 2 };
+
+// --- time line ---
+let timeLineY = ball.y + ball.r + 10;
+let points = [
+  {x:0, y:timeLineY},           
+  {x:ball.x - 100, y:timeLineY}, 
+  {x:ball.x, y:timeLineY},       
+  {x:ball.x + 100, y:timeLineY}, 
+];
+let amplitude = 40; // độ cong xuống cho đoạn 2->4
+
+
+function getTimeLinePoints(ballX, timeLineY, canvasWidth) {
+    const offset = canvasWidth * 0.16; // ~100px khi width=600, tỷ lệ responsive
+    return [
+        { x: 0, y: timeLineY },                 
+        { x: Math.max(ballX - offset, 0), y: timeLineY },  
+        { x: ballX, y: timeLineY },                  
+        { x: Math.min(ballX + offset, canvasWidth), y: timeLineY }, 
+    ];
+}
+
+// Hàm vẽ đường time line
+function drawTimeLine() {
+    draw();
+
+    timeLineY = ball.y + ball.r + 10;
+    draw(); // vẽ bi và các dây
+
+    timeLineY = ball.y + ball.r + 10;
+    points = getTimeLinePoints(ball.x, timeLineY, canvasc.width);
+
+    ctx2.strokeStyle="white";
+    ctx2.lineWidth=2;
+
+    // 1 -> 2 thẳng
+    ctx2.beginPath();
+    ctx2.moveTo(points[0].x, points[0].y);
+    ctx2.lineTo(points[1].x, points[1].y);
+    ctx2.stroke();
+
+    // 2 -> 4 cong xuống (bỏ qua điểm 3)
+    let midX = (points[1].x + points[3].x)/2;
+    let midY = (points[1].y + points[3].y)/2 + amplitude;
+    ctx2.beginPath();
+    ctx2.moveTo(points[1].x, points[1].y);
+    ctx2.quadraticCurveTo(midX, midY, points[3].x, points[3].y);
+    ctx2.stroke();
+
+    // 4 -> dài vô hạn về phải
+    ctx2.beginPath();
+    ctx2.moveTo(points[3].x, points[3].y);
+    ctx2.lineTo(canvasc.width + 1000, points[3].y);
+    ctx2.stroke();
+}
+
+// Hàm lấy y trên đường time line theo x
+function getYOnLine(x) {
+  if(x <= points[1].x) {
+    // đoạn 1->2 thẳng
+    return points[0].y;
+  } else if(x <= points[3].x) {
+    // đoạn 2->4 cong
+    let t = (x - points[1].x)/(points[3].x - points[1].x);
+    let midX = (points[1].x + points[3].x)/2;
+    let midY = (points[1].y + points[3].y)/2 + amplitude;
+    // quadratic Bézier
+    let y = (1-t)*(1-t)*points[1].y + 2*(1-t)*t*midY + t*t*points[3].y;
+    return y;
+  } else {
+    // đoạn dài vô hạn
+    return points[3].y;
+  }
+}
+
+// Animate gorilla
+function animate() {
+  ctx2.clearRect(0,0,canvasc.width,canvasc.height);
+  
+  drawTimeLine();
+  
+  let y = getYOnLine(gorilla.x);
+  ctx2.font = "32px monospace";
+  ctx2.textAlign = "center";
+  ctx2.textBaseline = "middle";
+  ctx2.fillText("🦍", gorilla.x, y);
+  
+  gorilla.x += gorilla.speed;
+  if(gorilla.x > canvasc.width + 32) gorilla.x = -32; // lặp lại
+  
+  requestAnimationFrame(animate);
+}
+
+animate();
+
+// --- Drag logic ---
+canvasc.addEventListener("mousedown", e=>{
+  const mx = e.offsetX, my = e.offsetY;
+  if (Math.hypot(mx-ball.x, my-ball.y) < ball.r) dragTarget=ball;
+});
+canvasc.addEventListener("mousemove", e=>{
+    if (dragTarget){
+      dragTarget.x = e.offsetX;
+      dragTarget.y = e.offsetY;
+      manualMode = false; // tự động khi kéo
+      draw();
+    }
+  });
+canvasc.addEventListener("mouseup", ()=>dragTarget=null);
+</script>
+</body>
+</html>
