@@ -100,7 +100,7 @@ let speed = 0.01; // tốc độ rơi
     const ballRadius = 15 * (1 - 0.7*Math.exp(-6*tBall*tBall));
   
     ctx1.beginPath();
-    ctx1.fillStyle = "red";
+    ctx1.fillStyle = "blue";
     ctx1.arc(x, y, ballRadius, 0, 2*Math.PI);
     ctx1.fill();
   }
@@ -136,15 +136,13 @@ function draw(){
     // Vẽ bi
     ctx2.beginPath();
     ctx2.arc(ball.x, ball.y, ball.r, 0, Math.PI*2);
-    ctx2.fillStyle="red";
+    ctx2.fillStyle="blue";
     ctx2.fill();
   
     let tx1,ty1,tx2,ty2,a1,a2;
     let t = 0.8; // độ cong
 
     let arcClockwise;
-
-    console.log(manualMode);
 
     if (manualMode) {
         modeToUse = mode; // dùng mode do button chọn
@@ -375,6 +373,35 @@ canvasc.addEventListener("mousemove", e=>{
       draw();
     }
   });
+
+  // --- Touch logic ---
+canvasc.addEventListener("touchstart", e => {
+  const rect = canvasc.getBoundingClientRect();
+  const touch = e.touches[0];
+  const mx = touch.clientX - rect.left;
+  const my = touch.clientY - rect.top;
+  if (Math.hypot(mx-ball.x, my-ball.y) < ball.r) {
+      dragTarget = ball;
+  }
+  e.preventDefault();
+});
+
+canvasc.addEventListener("touchmove", e => {
+  if (dragTarget) {
+      const rect = canvasc.getBoundingClientRect();
+      const touch = e.touches[0];
+      dragTarget.x = touch.clientX - rect.left;
+      dragTarget.y = touch.clientY - rect.top;
+      manualMode = false; // tự động khi kéo
+      draw();
+  }
+  e.preventDefault();
+});
+
+canvasc.addEventListener("touchend", e => {
+  dragTarget = null;
+});
+
 canvasc.addEventListener("mouseup", ()=>dragTarget=null);
 </script>
 </body>
