@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Kéo thả màu cơ bản & pha trộn</title>
+    <style>
+        body {
+            margin: 0;
+            height: 100vh;
+            overflow: hidden;
+            background: #f0f0f0;
+            font-family: sans-serif;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(3, 120px);
+            gap: 15px;
+            justify-content: center;
+            margin: 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .slot,
+        .piece {
+            width: 120px;
+            height: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 12px;
+            font-weight: bold;
+            font-size: 14px;
+            border: none;
+            user-select: none;
+            position: absolute;
+        }
+
+        .slot {
+            background: #fff;
+            color: #333;
+            border: 3px dashed #666;
+            cursor: default;
+            position: relative;
+        }
+
+        .piece {
+            color: white;
+            cursor: grab;
+            box-shadow:
+                inset -3px -3px 6px rgba(255, 255, 255, 0.6),
+                inset 3px 3px 6px rgba(0, 0, 0, 0.3),
+                0 6px 12px rgba(0, 0, 0, 0.4);
+            z-index: 100;
+        }
+
+        .piece.dragging {
+            cursor: grabbing;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.6);
+            z-index: 1000;
+        }
+
+
+
+        canvas {
+            display: block;
+        }
+
+        canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 0;
+            /* canvas nằm dưới */
+        }
+
+        .container {
+            position: relative;
+            z-index: 1;
+            /* container nằm trên canvas */
+            text-align: center;
+            color: #222;
+        }
+
+        .notify {
+            position: fixed;
+            padding: 15px 20px;
+            border-radius: 12px;
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.4);
+            opacity: 0;
+            transform: scale(0.8);
+            transition: all 0.5s ease;
+            max-width: 250px;
+            word-wrap: break-word;
+            z-index: 9999;
+        }
+
+        .notify.show {
+            opacity: 1;
+            transform: scale(1);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h2>Kéo vào ô đúng màu !!!</h2>
+        <div class="grid" id="grid"></div>
+    </div>
+
+
+    <canvas id="canvas"></canvas>
+    <div class="notify" id="notify"></div>
+
+    <script>
+        const canvas = document.getElementById("canvas");
+        const ctx = canvas.getContext("2d");
+
+        const colors = [
+            { name: "Chìa Khóa", color: "#ff0000" },
+            { name: "Ví tiền", color: "#0066ff" },
+            { name: "Cạo râu", color: "#ffd500" },
+            { name: "Điện thoại", color: "#8000ff" },
+            { name: "Game", color: "#ff6600" },
+            { name: "Tất/Vớ", color: "#00b300" }
+        ];
+
+        const pieces = [];
+        let dragging = null;
+        let offsetX = 0, offsetY = 0;
+
+        // tạo các nút màu
+        function getClientPos(e) {
+            if (e.touches && e.touches.length > 0) {
+                return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+            } else if (e.changedTouches && e.changedTouches.length > 0) {
+                return { x: e.changedTouches[0].clientX, y: e.changedTouches[0].clientY };
+            } else {
+                return { x: e.clientX, y: e.clientY };
+            }
+        }
+
+        const slots = [
+            { id: "Chìa Khóa", label: "Đỏ" },
+            { id: "Ví tiền", label: "Xanh dương" },
+            { id: "Cạo râu", label: "Vàng" },
+            { id: "Điện thoại", label: "Tím" },
+            { id: "Game", label: "Cam" },
+            { id: "Tất/Vớ", label: "Xanh lá" }
+        ];
+
+        // Hàm shuffle mảng (Fisher–Yates)
+        function shuffle(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        // render ngẫu nhiên
+        const grid = document.getElementById("grid");
+            shuffle(slots).forEach(s => {
+            const div = document.createElement("div");
+            div.className = "slot";
+            div.dataset.id = s.id;
+            div.textContent = s.label;
+            grid.appendChild(div);
+        });
+
+        colors.forEach(c => {
+            const el = document.createElement('div');
+            el.className = 'piece';
+            el.textContent = c.name;
+            el.style.background = c.color;
+            el.dataset.id = c.name;
+            document.body.appendChild(el);
+
+            const piece = {
+                el,
+                x: Math.random() * (canvas.width - 120),
+                y: Math.random() * (canvas.height - 120),
+                vx: (Math.random() - 0.5) * 4,
+                vy: (Math.random() - 0.5) * 4,
+                moving: true
+            };
+            pieces.push(piece);
+
+            // bắt đầu kéo (chuột + cảm ứng)
+            const startDrag = e => {
+                const pos = getClientPos(e);
+                dragging = piece;
+                piece.moving = false;
+                offsetX = pos.x - piece.x;
+                offsetY = pos.y - piece.y;
+                el.classList.add("dragging");
+            };
+
+            el.addEventListener("mousedown", startDrag);
+            el.addEventListener("touchstart", startDrag, { passive: true });
+        });
+
+        // di chuyển (chuột + cảm ứng)
+        const moveDrag = e => {
+            if (dragging) {
+                const pos = getClientPos(e);
+                dragging.x = pos.x - offsetX;
+                dragging.y = pos.y - offsetY;
+                dragging.el.style.left = dragging.x + "px";
+                dragging.el.style.top = dragging.y + "px";
+            }
+        };
+
+        document.addEventListener("mousemove", moveDrag);
+        document.addEventListener("touchmove", moveDrag, { passive: true });
+
+        let oldPlace;
+        let correctCount = 0;  // đếm số màu đã thả đúng
+
+        const endDrag = e => {
+            if (dragging) {
+                const pos = getClientPos(e);
+                let dropped = false;
+
+                document.querySelectorAll(".slot").forEach(s => {
+                    const rect = s.getBoundingClientRect();
+                    if (
+                        pos.x > rect.left &&
+                        pos.x < rect.right &&
+                        pos.y > rect.top &&
+                        pos.y < rect.bottom
+                    ) {
+                        if (s.dataset.id === dragging.el.dataset.id) {
+                            s.textContent = "";
+                            s.style.background = dragging.el.style.background;
+                            s.style.color = "white";
+                            s.style.border = "none";
+                            s.style.boxShadow = "0 6px #666";
+                            dragging.el.remove();
+                            dropped = true;
+
+                            correctCount++; // tăng số màu đúng
+
+                            // kiểm tra hoàn thành game
+                            if (correctCount === colors.length) {
+                                showWinPopup();
+                            }
+                        } else {
+                            let randomPlace;
+                            do {
+                                randomPlace = places[Math.floor(Math.random() * places.length)];
+                            } while (oldPlace === randomPlace);
+                            alert(`Sai ô rồi bạn ơi! Có khi nào nó nằm ở: ${randomPlace} 🤔`);
+                        }
+                    }
+                });
+
+                if (!dropped) dragging.moving = true;
+
+                dragging.el.classList.remove("dragging");
+                dragging = null;
+            }
+        };
+
+        // Hàm hiện popup khi thắng
+        function showWinPopup() {
+            const popup = document.createElement("div");
+            popup.innerHTML = `
+                <div style="
+                    position:fixed;
+                    top:50%; left:50%;
+                    transform:translate(-50%, -50%);
+                    background:white;
+                    padding:30px;
+                    border-radius:15px;
+                    box-shadow:0 0 20px rgba(0,0,0,0.4);
+                    text-align:center;
+                    font-size:20px;
+                    z-index:9999;
+                ">
+                    🎉 Chúc mừng! Bạn đã hoàn thành ! Ra khỏi phòng và đi xe cẩn thận ! 🎉<br><br>
+                    <button id="restartBtn" style="
+                        margin-top:15px;
+                        padding:10px 20px;
+                        font-size:16px;
+                        border:none;
+                        border-radius:8px;
+                        background:#4CAF50;
+                        color:white;
+                        cursor:pointer;
+                    ">Chơi lại</button>
+                </div>
+            `;
+            document.body.appendChild(popup);
+
+            document.getElementById("restartBtn").onclick = () => {
+                location.reload();
+            };
+        }
+
+        document.addEventListener("mouseup", endDrag);
+        document.addEventListener("touchend", endDrag);
+
+        const places = [
+            "Trên bàn làm việc",
+            "Trong túi quần/túi áo",
+            "Trong balo/túi xách",
+            "Trên kệ giày",
+            "Trong hộc tủ đầu giường",
+            "Treo trên móc cửa",
+            "Trong cốp xe",
+            "Dưới gối hoặc trên giường",
+            "Trên sofa/phòng khách",
+            "Trên nóc tủ lạnh (hoặc kệ tủ lạnh 😅)",
+            "Trong ngăn kéo bếp",
+            "Để lẫn trong đống quần áo giặt",
+            "Bỏ trong túi áo khoác treo lâu ngày",
+            "Ở nhà vệ sinh (bệ rửa mặt, kệ xà phòng)",
+            "Bỏ quên ở quán cà phê/nhà hàng",
+            "Bỏ vào hộp giấy dưới gầm giường",
+            "Trong sách (xài như bookmark)",
+            "Trên máy tính/laptop",
+            "Bỏ trong hộp bánh kẹo/ly cốc cho tiện tay",
+            "Trên đầu tủ giày hoặc trong hộp giày",
+            "Trong vali lâu ngày không mở"
+        ];
+
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        // Mảng chứa các hạt khói
+        let particles = [];
+
+        class Smoke {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.size = 50 + Math.random() * 80; // kích thước đám khói
+                this.opacity = 0.1 + Math.random() * 0.3;
+                this.speedX = (Math.random() - 0.5) * 1;
+                this.speedY = (Math.random() - 0.5) * 1;
+                this.life = 300 + Math.random() * 200;
+            }
+
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+                this.life--;
+                if (this.life < 50) this.opacity -= 0.005; // mờ dần
+            }
+
+            draw() {
+                const gradient = ctx.createRadialGradient(this.x, this.y, this.size * 0.1, this.x, this.y, this.size);
+                gradient.addColorStop(0, `rgba(200,200,200,${this.opacity})`); // trung tâm xám nhạt
+                gradient.addColorStop(1, `rgba(180,180,180,0)`);               // rìa loang mờ
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        function addSmoke() {
+            if (particles.length < 80) { // giới hạn số đám khói
+                particles.push(new Smoke());
+            }
+        }
+
+        function animate() {
+
+            pieces.forEach(p => {
+                if (p.moving) {
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    if (p.x <= 0 || p.x >= window.innerWidth - 120) p.vx *= -1;
+                    if (p.y <= 0 || p.y >= window.innerHeight - 120) p.vy *= -1;
+                    p.el.style.left = p.x + "px";
+                    p.el.style.top = p.y + "px";
+                }
+            });
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            particles.forEach((p, i) => {
+                p.update();
+                p.draw();
+                if (p.life <= 0 || p.opacity <= 0) {
+                    particles.splice(i, 1);
+                }
+            });
+
+            addSmoke();
+            requestAnimationFrame(animate);
+        }
+
+        animate();
+
+        // Resize màn hình
+        window.addEventListener("resize", () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+
+        const messages = [
+            "Hình như crush mới lấy chìa khóa nhà mình…",
+            "Không lẽ cô ấy vào phòng mình lấy cắp trái tim rồi…",
+            "Ai ghét mình chắc đã vứt đồ mình đâu đó…",
+            "Có khi nào crush lén đặt camera trong phòng mình không…",
+            "Tự nhiên mất ngủ, chắc có người đang nghĩ về mình…",
+            "Điện thoại rung nhẹ, chắc crush vừa nhắc tới tên mình…",
+            "Không lẽ cô ấy lén đổi pass laptop của mình rồi…",
+            "Hình như ai vừa ăn vụng hết đồ ăn mình để trong tủ lạnh…",
+            "Có khi nào crush mượn dép mình đi dạo mà không nói…",
+            "Tự dưng mưa to, chắc trời đang khóc thương cho mình…",
+            "Không lẽ crush giả vờ bơ mình để thử lòng…",
+            "Hình như có ai đó thay avatar giống mình để theo dõi crush…",
+            "Cốc nước mình vừa uống, chắc có người bỏ thêm “thính” vào…",
+            "Có khi nào crush lén ghi âm giọng mình để nghe lại mỗi tối…",
+            "Không lẽ cô ấy hack pass Facebook mình rồi…",
+            "Hình như có người lén dọn phòng mình, mà mình vẫn thấy bừa…",
+            "Tự nhiên lạnh gáy, chắc crush vừa lén nhìn từ xa…",
+            "Có khi nào cô ấy thấy tin nhắn mình nhưng cố tình không rep…",
+            "Không lẽ crush đã trộm mất giấc ngủ trưa của mình rồi…",
+            "Hình như có ai đó cố tình đánh rơi kỷ niệm của mình…",
+            "Tự dưng tim đập nhanh, chắc crush vừa nhắc tên mình ở đâu đó…",
+            "Có khi nào cô ấy đi qua nhà mình mà không gọi cửa…",
+            "Không lẽ crush vào giấc mơ mình để “soi” cuộc sống…",
+            "Hình như ai đó vừa thay đổi số phận của mình mà chưa báo…",
+            "Có khi nào crush giả vờ ghét mình nhưng thật ra thích lắm…",
+            "Không lẽ cô ấy mượn ví mình đi shopping rồi…",
+            "Hình như có ai đó trộm mất cái bóng của mình…",
+            "Tự nhiên thấy gió thổi, chắc crush vừa thở dài vì nhớ mình…",
+            "Có khi nào cô ấy tạo nick ảo để nói chuyện với mình…",
+            "Không lẽ crush đang ngồi ngay sau lưng mình mà mình không hay…"
+        ];
+
+        const notify_colors = [
+            { bg: "#ff6b6b", color: "#fff" },
+            { bg: "#1dd1a1", color: "#fff" },
+            { bg: "#54a0ff", color: "#fff" },
+            { bg: "#feca57", color: "#000" },
+            { bg: "#5f27cd", color: "#fff" },
+            { bg: "#222f3e", color: "#f1f1f1" }
+        ];
+
+        const notify = document.getElementById("notify");
+        let oldmsg;
+        function showMessage() {
+            // nếu đã hoàn thành game thì không hiện nữa
+            if (correctCount === colors.length) return;
+        
+            let msg;
+            do {
+                msg = messages[Math.floor(Math.random() * messages.length)];
+            } while (oldmsg === msg);
+            oldmsg = msg;
+        
+            const style = notify_colors[Math.floor(Math.random() * notify_colors.length)];
+            notify.textContent = msg;
+        
+            // random vị trí
+            const x = Math.random() * (window.innerWidth - 300);
+            const y = Math.random() * (window.innerHeight - 100);
+        
+            notify.style.left = `${x}px`;
+            notify.style.top = `${y}px`;
+        
+            // random style
+            notify.style.background = style.bg;
+            notify.style.color = style.color;
+            notify.style.borderRadius = `${10 + Math.random() * 30}px`;
+            notify.style.boxShadow = `0 6px 15px rgba(0,0,0,${0.3 + Math.random() * 0.4})`;
+        
+            notify.classList.add("show");
+        
+            // ẩn sau 3 giây
+            setTimeout(() => {
+                notify.classList.remove("show");
+            }, 3000);
+        
+            // lặp lại sau 5–10 giây (chỉ khi chưa kết thúc game)
+            if (correctCount !== colors.length) {
+                const delay = 3500;
+                setTimeout(showMessage, delay);
+            }
+        }
+        
+        // chỉ bắt đầu vòng lặp message nếu game chưa kết thúc
+        if (correctCount !== colors.length) {
+            setTimeout(showMessage, 2000);
+        }
+    </script>
+</body>
+
+</html>

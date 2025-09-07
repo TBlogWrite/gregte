@@ -53,3 +53,11 @@ layout: layout.html
   <small>({{ htspmarble.date | date: "yyyy-MM-dd" }})</small>
 </li>
 {% endfor %}
+
+
+{% for findindelusion in collections.findindelusion | reverse %}
+<li style="">
+  <a href="{{ findindelusion.url }}">{{ findindelusion.data.title }}</a>
+  <small>({{ findindelusion.date | date: "yyyy-MM-dd" }})</small>
+</li>
+{% endfor %}
