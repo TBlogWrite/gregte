@@ -61,3 +61,10 @@ layout: layout.html
   <small>({{ findindelusion.date | date: "yyyy-MM-dd" }})</small>
 </li>
 {% endfor %}
+
+{% for numberlucky in collections.numberlucky | reverse %}
+<li style="">
+  <a href="{{ numberlucky.url }}">{{ numberlucky.data.title }}</a>
+  <small>({{ numberlucky.date | date: "yyyy-MM-dd" }})</small>
+</li>
+{% endfor %}

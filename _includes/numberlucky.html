@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Quay số xổ số 3D</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg, #222, #444);
+      color: #fff;
+      text-align: center;
+      padding: 40px;
+    }
+    h1 { 
+      color: #ffcc00; 
+      text-shadow: 2px 2px 8px #000;
+    }
+    #result {
+      font-size: 60px;
+      margin: 30px auto;
+      font-weight: bold;
+      width: 260px;
+      padding: 20px;
+      border-radius: 15px;
+      background: linear-gradient(145deg, #3a3a3a, #1a1a1a);
+      box-shadow: 8px 8px 20px #000, -6px -6px 16px #555;
+      transform: perspective(600px) rotateX(10deg);
+      transition: transform 0.6s ease, box-shadow 0.6s ease;
+    }
+    #result.spin {
+      transform: perspective(600px) rotateX(360deg);
+      box-shadow: 0 0 40px #ffcc00;
+    }
+    button {
+      padding: 12px 25px;
+      font-size: 18px;
+      border: none;
+      border-radius: 10px;
+      background: linear-gradient(145deg, #28a745, #218838);
+      color: #fff;
+      cursor: pointer;
+      box-shadow: 4px 4px 10px #000;
+      transition: 0.3s;
+    }
+    button:hover {
+      background: linear-gradient(145deg, #34d058, #218838);
+      transform: scale(1.05);
+    }
+    .blog {
+      margin-top: 40px;
+      padding: 20px;
+      background: #333;
+      border-radius: 12px;
+      box-shadow: inset 2px 2px 8px #000, inset -2px -2px 8px #555;
+      max-width: 600px;
+      margin-left: auto;
+      margin-right: auto;
+      text-align: left;
+    }
+    .blog h2 {
+      color: #ffcc00;
+      margin-bottom: 10px;
+    }
+    .blog p {
+      line-height: 1.6;
+    }
+  </style>
+</head>
+<body>
+  <h1>🎉 Dự đoán sổ số 🎉</h1>
+  <div id="result">--</div>
+  <button onclick="quaySo()">Quay số</button>
+
+  <script>
+    async function quaySo() {
+        const result = document.getElementById("result");
+        result.classList.add("spin");
+        result.textContent = "...";
+  
+        try {
+          const res = await fetch("https://tictack-number-lucky.hf.space/predict", {
+            method: "GET",
+            headers: { "Content-Type": "application/json" },
+          });
+          
+          const data = await res.json();
+  
+          // lấy số từ API
+          let so = data.prediction;
+          so = so.toString().padStart(2, "0");
+  
+          setTimeout(() => {
+            result.textContent = so;
+            result.classList.remove("spin");
+          }, 600);
+  
+        } catch (err) {
+          console.error(err);
+          result.textContent = "Lỗi API";
+          result.classList.remove("spin");
+        }
+      }
+  </script>
+</body>
+</html>
