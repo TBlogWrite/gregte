@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Thang đo: Lịch sự ↔ Dơ nhớp</title>
+<title>Thang đo: Lịch sự ↔ Lôi thôi</title>
 <style>
   :root{
     --size-ctrl: 18px;
@@ -223,9 +223,9 @@
 </style>
 </head>
 <body>
-  <div class="card" role="region" aria-label="Thang đo lịch sự đến dơ nhớp">
+  <div class="card" role="region" aria-label="Thang đo lịch sự đến lôi thôi">
     <h1>Thang đo hành vi</h1>
-    <p class="lead">Kéo núm để đánh giá vị trí giữa <strong>lịch sự</strong> và <strong>dơ nhớp</strong>.</p>
+    <p class="lead">Kéo núm để đánh giá vị trí giữa <strong>lịch sự</strong> và <strong>lôi thôi</strong>.</p>
 
     <div class="scale-wrap">
       <div class="labels" aria-hidden="false">
@@ -239,7 +239,7 @@
           <span>Thang: 0 → 100</span>
         </div>
         <div class="end" style="background: linear-gradient(90deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));">
-          <span>Dơ nhớp</span>
+          <span>Lôi thôi</span>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
             <path d="M3 3h18v2H3V3zm2 4h14v12a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V7z" fill="#ffb7a7"/>
           </svg>
@@ -249,7 +249,7 @@
       <div class="slider" style="position:relative;" aria-hidden="false">
         <div class="track" id="track">
           <div class="fill" id="fill"></div>
-          <input id="range" type="range" min="0" max="100" value="20" aria-label="Điều chỉnh mức độ giữa lịch sự và dơ nhớp">
+          <input id="range" type="range" min="0" max="100" value="20" aria-label="Điều chỉnh mức độ giữa lịch sự và lôi thôi">
           <!-- bubble rendered by JS -->
           <div class="bubble" id="bubble" role="status" aria-live="polite">
             <span class="emo">🙂</span><span id="bubbleText">Lịch sự nhẹ</span>
