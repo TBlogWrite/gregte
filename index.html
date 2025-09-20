@@ -68,3 +68,11 @@ layout: layout.html
   <small>({{ numberlucky.date | date: "yyyy-MM-dd" }})</small>
 </li>
 {% endfor %}
+
+
+{% for distancecourteous in collections.distancecourteous | reverse %}
+<li style="">
+  <a href="{{ distancecourteous.url }}">{{ distancecourteous.data.title }}</a>
+  <small>({{ distancecourteous.date | date: "yyyy-MM-dd" }})</small>
+</li>
+{% endfor %}

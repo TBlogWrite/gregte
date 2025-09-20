@@ -1,0 +1,357 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Thang đo: Lịch sự ↔ Dơ nhớp</title>
+<style>
+  :root{
+    --size-ctrl: 18px;
+    --track-h: 14px;
+    --bg: #0f172a;
+    --card: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(0,0,0,0.1));
+    --glass: rgba(255,255,255,0.04);
+  }
+  *{box-sizing:border-box;font-family:Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;}
+  body{
+    margin:0;
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background: #cbcbcb;
+    color:#e6eef8;
+    padding:28px;
+  }
+
+  .card{
+    width: min(820px, 94vw);
+    background: var(--card);
+    border-radius: 16px;
+    padding: 28px;
+    background: linear-gradient(180deg, #36549d 0%, #162745 60%);
+    box-shadow: 0 10px 30px rgb(48 81 221 / 60%), inset 0 1px 0 rgba(255, 255, 255, 0.02);
+    transform: translateZ(0);
+    perspective: 1200px;
+  }
+
+  h1{
+    margin:0 0 12px 0;
+    font-size:20px;
+    letter-spacing:0.2px;
+  }
+  p.lead{margin:0 0 18px 0;color:#bcd3f7cc;font-size:13px}
+
+  .scale-wrap{
+    padding:18px;
+    border-radius:12px;
+    background: linear-gradient(180deg, rgba(255,255,255,0.01), rgba(0,0,0,0.06));
+    display:grid;
+    gap:12px;
+  }
+
+  .labels{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:8px;
+  }
+  .end{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    font-weight:600;
+    font-size:14px;
+    padding:6px 10px;
+    border-radius:10px;
+    background:var(--glass);
+    backdrop-filter: blur(4px);
+  }
+  .end.small{font-weight:500; font-size:13px; padding:4px 8px}
+
+  /* custom range styling */
+  .slider{
+    position:relative;
+    padding:14px 6px 8px 6px;
+  }
+
+  input[type="range"]{
+    -webkit-appearance:none;
+    width:100%;
+    height:var(--track-h);
+    background:transparent;
+    margin:0;
+    cursor:pointer;
+  }
+  /* track layer: we'll use gradient background on parent .track */
+  .track{
+    position:relative;
+    height:var(--track-h);
+    border-radius:999px;
+    overflow:visible;
+    display:flex;
+    align-items:center;
+    padding:0 8px;
+  }
+
+  /* faux track (gradient) */
+  .track::before{
+    content:"";
+    position:absolute;
+    left:8px; right:8px;
+    height:8px;
+    border-radius:999px;
+    background: linear-gradient(90deg, #8cc7ff 0%, #aef6a1 25%, #ffd86a 50%, #ff9b6b 75%, #b94b44 100%);
+    box-shadow: inset 0 -1px 0 rgba(0,0,0,0.35), 0 3px 14px rgba(11,22,40,0.6);
+  }
+
+  /* rail fill under the thumb to indicate value */
+  .fill{
+    position:absolute;
+    left:8px;
+    top:50%;
+    transform:translateY(-50%);
+    height:8px;
+    border-radius:999px;
+    pointer-events:none;
+    background: linear-gradient(90deg, rgba(255,255,255,0.45), rgba(255,255,255,0.12));
+    mix-blend-mode: overlay;
+    width:0%;
+  }
+
+  /* hide native track */
+/* slider wrapper: thêm padding hai bên bằng nửa chiều rộng toilet */
+    .slider {
+        position: relative;
+        padding: 14px 30px 8px 30px; /* 30px = 48/2 gần bằng nửa nút 🚽 */
+    }
+  
+  /* range kéo ngắn lại để toilet sát mép */
+  .slider input[type="range"] {
+    -webkit-appearance: none;
+    width: calc(100%); /* trừ đi 2 bên 30px */
+    height: var(--track-h);
+    background: transparent;
+    margin: 0;
+    cursor: pointer;
+  }
+  
+  /* hide native track */
+  input[type=range]::-webkit-slider-runnable-track { 
+    height: 8px; 
+    -webkit-appearance: none; 
+    background: none; 
+    border: none;
+    z-index: 5;
+  }
+  input[type=range]::-moz-range-track { 
+    height: 8px; 
+    
+    background: none;
+    border: none;
+  }
+  
+  /* toilet thumb */
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 48px;
+    height: 48px;
+    border: none;
+    background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' font-size='36'><text y='36'>🚽</text></svg>") no-repeat center/contain;
+    cursor: grab;
+    margin-top: -20px; /* căn lại để track nằm giữa thân toilet */
+    z-index: 5;
+  }
+  
+  input[type="range"]::-moz-range-thumb {
+    width: 48px;
+    height: 48px;
+    border: none;
+    background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' font-size='36'><text y='36'>🚽</text></svg>") no-repeat center/contain;
+    cursor: grab;
+  }
+
+  /* ticks and mini labels */
+  .ticks{
+    display:flex;
+    justify-content:space-between;
+    margin-top:8px;
+    font-size:12px;
+    color:#cfe3ffcc;
+    letter-spacing:0.2px;
+  }
+
+  /* bubble tooltip */
+  .bubble{
+    position:absolute;
+    top:-56px;
+    transform:translateX(-50%);
+    left:0%;
+    min-width:180px;
+    text-align:center;
+    padding:8px 10px;
+    border-radius:10px;
+    background: linear-gradient(180deg, rgba(9,20,40,0.95), rgba(6,12,25,0.95));
+    color:#e8f6ff;
+    font-weight:600;
+    font-size:13px;
+    box-shadow:0 8px 18px rgba(2,6,22,0.6);
+    pointer-events:none;
+  }
+  .bubble .emo{font-size:16px; margin-right:6px;}
+
+  .status{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-top:14px;
+    font-size:14px;
+    font-weight:600;
+  }
+  .status .meter{
+    padding:8px 12px;
+    border-radius:999px;
+    background: linear-gradient(90deg, rgba(255,255,255,0.03), rgba(0,0,0,0.06));
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.02);
+  }
+  /* small helper */
+  .foot{margin-top:12px;color:#aac8ff88;font-size:12px}
+  @media (max-width:520px){
+    .end{font-size:13px}
+    .bubble{min-width:68px; font-size:12px}
+  }
+</style>
+</head>
+<body>
+  <div class="card" role="region" aria-label="Thang đo lịch sự đến dơ nhớp">
+    <h1>Thang đo hành vi</h1>
+    <p class="lead">Kéo núm để đánh giá vị trí giữa <strong>lịch sự</strong> và <strong>dơ nhớp</strong>.</p>
+
+    <div class="scale-wrap">
+      <div class="labels" aria-hidden="false">
+        <div class="end">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M12 2c1.1 0 2 .9 2 2v4H10V4c0-1.1.9-2 2-2zM6 8v10c0 1.1.9 2 2 2h1v-6H6V8zm10 0v8h-4v6h1c1.1 0 2-.9 2-2V8h-1z" fill="#bfe6ff"/>
+          </svg>
+          <span>Lịch sự</span>
+        </div>
+        <div class="end small" style="background: linear-gradient(90deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));">
+          <span>Thang: 0 → 100</span>
+        </div>
+        <div class="end" style="background: linear-gradient(90deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));">
+          <span>Dơ nhớp</span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M3 3h18v2H3V3zm2 4h14v12a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V7z" fill="#ffb7a7"/>
+          </svg>
+        </div>
+      </div>
+
+      <div class="slider" style="position:relative;" aria-hidden="false">
+        <div class="track" id="track">
+          <div class="fill" id="fill"></div>
+          <input id="range" type="range" min="0" max="100" value="20" aria-label="Điều chỉnh mức độ giữa lịch sự và dơ nhớp">
+          <!-- bubble rendered by JS -->
+          <div class="bubble" id="bubble" role="status" aria-live="polite">
+            <span class="emo">🙂</span><span id="bubbleText">Lịch sự nhẹ</span>
+          </div>
+        </div>
+
+        <div class="ticks" aria-hidden="true">
+          <span>0</span>
+          <span>25</span>
+          <span>50</span>
+          <span>75</span>
+          <span>100</span>
+        </div>
+      </div>
+
+      <div class="status" aria-hidden="false">
+        <div class="meter" id="meterText">Mức hiện tại: <strong id="valueText">20</strong></div>
+        <div style="flex:1"></div>
+      </div>
+    </div>
+  </div>
+
+<script>
+  const range = document.getElementById('range');
+  const bubble = document.getElementById('bubble');
+  const bubbleText = document.getElementById('bubbleText');
+  const valueText = document.getElementById('valueText');
+  const fill = document.getElementById('fill');
+  const track = document.getElementById('track');
+
+  function updateUI(val){
+    // update numeric
+    valueText.textContent = val;
+
+    // update fill width (calc based on input min/max)
+    const min = +range.min, max = +range.max;
+    const pct = (val - min) / (max - min) * 100;
+    
+    if (pct === 100) {
+        fill.style.width = 95 + '%';
+    } else {
+        fill.style.width = pct + '%';
+    }
+
+    // position bubble: align with thumb roughly
+    // compute track visual left & right padding (we used 8px in CSS)
+    const trackRect = track.getBoundingClientRect();
+    const leftPad = 8, rightPad = 8;
+    const usable = trackRect.width - leftPad - rightPad;
+    const x = leftPad + usable * (pct / 100);
+    bubble.style.left = x + 'px';
+
+    // dynamic status + emoji
+    let label = '';
+    let emo = '🙂';
+
+    if (val <= 10) {
+        label = 'Cơ thể khỏe mạnh';
+        emo = '💪';
+    } else if (val <= 35) {
+        label = 'Bụng tiêu hóa tốt';
+        emo = '😊';
+    } else if (val <= 45) {
+        label = 'Tiêu hóa bình thường';
+        emo = '😐';
+    } else if (val <= 55) {
+        label = 'Có vấn đề tiêu hóa';
+        emo = '🥴';
+    } else if (val <= 60) {
+        label = 'Rối loạn tiêu hóa';
+        emo = '💩';
+    } else if (val <= 85) {
+        label = 'Trúng thực';
+        emo = '🤢';
+    } else if (val <= 90) {
+        label = 'Buồn nôn';
+        emo = '🤮';
+    } else {
+        label = 'Mua thuốc đau bụng';
+        emo = '💊';
+    }
+    bubbleText.textContent = label;
+    bubble.querySelector('.emo').textContent = emo;
+
+    // ARIA announcement: update aria-live text (valueText is inside aria-live region)
+    valueText.setAttribute('aria-label', 'Giá trị ' + val);
+  }
+
+  // init
+  updateUI(+range.value);
+
+  // events
+  range.addEventListener('input', e => {
+    updateUI(+e.target.value);
+  });
+
+  // make bubble follow while dragging with pointer events for smoothness
+  range.addEventListener('pointerdown', ()=> bubble.style.transition = 'none');
+  range.addEventListener('pointerup', ()=> { bubble.style.transition = ''; });
+
+  // on resize reposition
+  window.addEventListener('resize', ()=> updateUI(+range.value));
+</script>
+</body>
+</html>
