@@ -76,3 +76,11 @@ layout: layout.html
   <small>({{ distancecourteous.date | date: "yyyy-MM-dd" }})</small>
 </li>
 {% endfor %}
+
+
+{% for wish in collections.wish | reverse %}
+<li style="">
+  <a href="{{ wish.url }}">{{ wish.data.title }}</a>
+  <small>({{ wish.date | date: "yyyy-MM-dd" }})</small>
+</li>
+{% endfor %}

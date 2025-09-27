@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <title>🙏 Chọn điều bạn cầu mong</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap" rel="stylesheet">
+  <style>
+    canvas { display: block; background: #f4f4f4; }
+    body {
+      margin:0;
+      padding:0;
+      height:100vh;
+      display:flex;
+      flex-direction:column;
+      justify-content:center;
+      align-items:center;
+      background:#f0f0f0;
+      overflow:hidden;
+      font-family: "Great Vibes", cursive;
+      font-weight: 400;
+      font-style: normal;
+    }
+    #gr-bt {
+      position: absolute;
+      width: 100%;
+      z-index: 100;
+      top: 43px;
+    }
+
+  button {
+    margin: 10px;
+    padding: 12px 28px;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+    border: none;
+    border-radius: 30px;        /* bo tròn nhiều */
+    background: linear-gradient(135deg, #4CAF50, #2e7d32);
+    color: white;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    transition: transform 0.2s, background 0.3s, box-shadow 0.3s;
+  }
+
+  button {
+    font-family: "Great Vibes", cursive;
+  }
+
+  button:hover {
+    background: linear-gradient(135deg, #66bb6a, #388e3c);
+    transform: scale(1.07);      /* phóng to nhẹ khi hover */
+    box-shadow: 0 6px 12px rgba(0,0,0,0.25);
+  }
+
+  button:active {
+    transform: scale(0.95);      /* nhấn xuống thì nhỏ lại */
+    box-shadow: 0 3px 6px rgba(0,0,0,0.2);
+  }
+  
+  .icon {
+    position: absolute;
+    top: 50%;
+    font-size: 50px; /* tăng kích thước */
+    animation-timing-function: linear;
+    animation-fill-mode: forwards;
+    pointer-events: none;
+    
+  }
+  
+  /* bay sang phải */
+  @keyframes flyAcross {
+    from { transform: translateX(-100px); opacity:1;  }
+    to   { transform: translateX(110vw); opacity:0; }
+  }
+  
+  /* bay sang trái với ánh sáng nổi bật */
+  @keyframes flyBack {
+    0% {
+      transform: translateX(100vw);
+      opacity: 0.5;
+      text-shadow: 0 0 5px #fff, 0 0 10px #ff0, 0 0 15px #ff0;
+    }
+    25% {
+      opacity: 0.7;
+      text-shadow: 0 0 10px #fff, 0 0 20px #ff0, 0 0 30px #ff0;
+    }
+    50% {
+      opacity: 0.9;
+      text-shadow: 0 0 15px #fff, 0 0 30px #ff0, 0 0 45px #ff0;
+    }
+    75% {
+      opacity: 1;
+      text-shadow: 0 0 20px #fff, 0 0 40px #ff0, 0 0 60px #ff0;
+    }
+    100% {
+      transform: translateX(-90vw);
+      opacity: 1;
+      text-shadow: 0 0 25px #fff, 0 0 50px #ff0, 0 0 75px #ff0;
+    }
+  }
+  
+  </style>
+</head>
+<body>
+  <div id="gr-bt">
+  <button onclick="fly('💸')">Cầu tiền tài</button>
+  <button onclick="fly('🧠')">Cầu trí tuệ</button>
+  <button onclick="fly('❤️')">Cầu tình yêu</button>
+  <button onclick="fly('💼', true)">Cầu công việc</button>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+<script>
+  const scene = new THREE.Scene();
+
+  let aspect = window.innerWidth / window.innerHeight;
+  const camera = new THREE.OrthographicCamera(-10*aspect, 10*aspect, 10, -10, 0.1, 100);
+  camera.position.z = 20;
+  
+  const renderer = new THREE.WebGLRenderer({antialias: true});
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  document.body.appendChild(renderer.domElement);
+  
+  /* ==== Nhóm người que ==== */
+  const stickman = new THREE.Group();
+  scene.add(stickman);
+  
+  function makeStick(x1, y1, x2, y2, color, thickness=0.1) {
+    const dx = x2 - x1;
+    const dy = y2 - y1;
+    const length = Math.sqrt(dx*dx + dy*dy);
+    const geometry = new THREE.CylinderGeometry(thickness, thickness, length, 8);
+    const stick = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({ color: color }));
+    stick.position.set((x1+x2)/2, (y1+y2)/2, 0);
+    stick.rotation.z = Math.atan2(dy, dx) - Math.PI/2;
+    stickman.add(stick); // thêm vào group
+  }
+  
+  /* Đầu (đen viền trắng) */
+  const headPoints = new THREE.Path()
+    .absarc(0, 8, 1, 0, Math.PI * 2, false)
+    .getPoints(64);
+  const headGeometry = new THREE.BufferGeometry().setFromPoints(headPoints);
+  const headMaterial = new THREE.LineBasicMaterial({ color: 0xffffff });
+  const head = new THREE.LineLoop(headGeometry, headMaterial);
+  stickman.add(head);
+  
+  /* Thân */
+  makeStick(0, 7, 0, 4, 0x0000ff);
+  /* Đùi */
+  makeStick(0, 4, 2, 3, 0x00ff00);
+  /* Cẳng chân */
+  makeStick(-1, 3, 2, 3, 0xff8800);
+  /* Tay */
+  makeStick(0, 6, 1.5, 7, 0xff0000);
+  
+  /* ==== Căn người que xuống đáy ==== */
+  function positionStickman() {
+    const viewHeight = camera.top - camera.bottom;
+    // Dời xuống đáy, nhích lên một chút (1 đơn vị)
+    stickman.position.y = camera.bottom + 1;
+  }
+  positionStickman();
+  
+  /* Render loop */
+  function animate() {
+    requestAnimationFrame(animate);
+    renderer.render(scene, camera);
+  }
+  animate();
+  
+  /* Resize handler */
+/* ==== Căn người que xuống góc trái dưới ==== */
+function positionStickman() {
+  const margin = 1; // chừa 1 đơn vị cho khỏi dính sát
+  stickman.position.y = camera.bottom;
+  stickman.position.x = camera.left + margin + 3;
+}
+positionStickman();
+
+/* Resize handler */
+window.addEventListener('resize', () => {
+  aspect = window.innerWidth / window.innerHeight;
+  camera.left = -10 * aspect;
+  camera.right = 10 * aspect;
+  camera.top = 10;
+  camera.bottom = -10;
+  camera.updateProjectionMatrix();
+
+  renderer.setSize(window.innerWidth, window.innerHeight);
+
+  positionStickman(); // đặt lại người que vào góc trái dưới
+});
+
+function fly(symbol, reverse = false) {
+  const icon = document.createElement("div");
+  icon.className = "icon";
+  icon.textContent = symbol;
+
+  const randY = 20 + Math.random() * 60;
+  icon.style.top = randY + "vh";
+
+  // animation bay + ánh sáng
+  icon.style.animationName = reverse ? "flyBack" : "flyAcross";
+
+  // tăng tốc độ nếu muốn
+  icon.style.animationDuration = reverse ? "1.5s" : "3s";
+
+  document.body.appendChild(icon);
+
+  setTimeout(() => icon.remove(), 2500);
+}
+</script>
+</body>
+</html>
