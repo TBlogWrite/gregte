@@ -1,0 +1,412 @@
+<!doctype html>
+<html lang="vi">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Người que lái xe máy - Animation</title>
+    <style>
+        /* Reset cơ bản */
+        html,
+        body {
+            height: 100%;
+            margin: 0;
+            background: linear-gradient(#87CEEB, #BFE9FF);
+        }
+
+        #stage {
+            display: block;
+            width: 100%;
+            height: 100vh;
+        }
+
+        /* Thông tin hướng dẫn nhỏ */
+        .ui {
+            position: fixed;
+            left: 12px;
+            top: 12px;
+            background: rgba(255, 255, 255, 0.8);
+            padding: 8px 10px;
+            border-radius: 8px;
+            font-family: Inter, Arial, sans-serif;
+            font-size: 14px;
+            color: #222;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1)
+        }
+
+        /* Nút điều khiển */
+        .btn {
+            margin-left: 8px;
+            padding: 6px 10px;
+            border-radius: 6px;
+            border: none;
+            background: #2b7cff;
+            color: white;
+            cursor: pointer
+        }
+
+        .btn:active {
+            transform: translateY(1px)
+        }
+    </style>
+</head>
+
+<body>
+    <div class="ui">Nhấn <button class="btn" id="toggle">Tạm dừng</button> tốc độ: <input id="speed" type="range"
+            min="1" max="6" value="3" /> <span id="spdVal">3</span></div>
+    <canvas id="stage"></canvas>
+
+    <script>
+        // Mô tả: animation canvas đơn giản. Người que + xe máy chạy ngang qua nhiều ngôi nhà.
+        // Tất cả trong 1 file, dễ chỉnh sửa.
+
+        const canvas = document.getElementById('stage');
+        const ctx = canvas.getContext('2d');
+        let W = canvas.width = innerWidth;
+        let H = canvas.height = innerHeight;
+
+        window.addEventListener('resize', () => {
+            W = canvas.width = innerWidth;
+            H = canvas.height = innerHeight;
+        });
+
+        // Cấu hình
+        const roadY = Math.floor(H * 0.72);
+        let speedFactor = 3; // điều khiển tốc độ di chuyển cảnh (không phải tốc độ bánh xe)
+        let paused = false;
+
+        // Tạo các ngôi nhà (vị trí x, chiều rộng, màu)
+        const houses = [];
+        function generateHouses() {
+            houses.length = 0;
+            let x = -200;
+            while (x < W + 800) {
+                const w = 100 + Math.floor(Math.random() * 160);
+                const h = 80 + Math.floor(Math.random() * 180);
+                const color = randomHouseColor();
+                houses.push({ x, w, h, color });
+                x += w + 60 + Math.random() * 160;
+            }
+        }
+
+        function randomHouseColor() {
+            const palette = ['#f28b82', '#fbbc04', '#fff475', '#ccff90', '#a7ffeb', '#cbf0f8', '#aecbfa', '#d7aefb'];
+            return palette[Math.floor(Math.random() * palette.length)];
+        }
+
+        generateHouses();
+
+        // Trạng thái người lái xe (chỉ 1 người que) - đặt ở tỉ lệ so với canvas
+        let rider = {
+            x: Math.floor(W * 0.2),
+            y: roadY - 28,
+            vx: 0,
+            wheelAngle: 0
+        };
+
+        // Biến để di chuyển cảnh (tức là nhà chạy qua trái giống người đi về phải)
+        let worldOffset = 0;
+
+        // Vẽ đường
+        function drawRoad() {
+            // đường
+            ctx.fillStyle = '#3a3a3a';
+            ctx.fillRect(0, roadY, W, H - roadY);
+            // vạch giữa
+            ctx.fillStyle = '#ffd';
+            const dashW = 60;
+            for (let i = -worldOffset % (dashW * 2); i < W; i += dashW * 2) {
+                ctx.fillRect(i + 20, roadY + 28, dashW, 8);
+            }
+        }
+
+        // Vẽ nhà (đơn giản: thân + mái + cửa sổ)
+        function drawHouse(h) {
+            const baseY = roadY - 8;
+            // thân nhà
+            ctx.fillStyle = h.color;
+            ctx.fillRect(h.x + worldOffset, baseY - h.h, h.w, h.h);
+            // mái tam giác
+            ctx.fillStyle = '#7b3e19';
+            ctx.beginPath();
+            ctx.moveTo(h.x + worldOffset - 6, baseY - h.h);
+            ctx.lineTo(h.x + worldOffset + h.w / 2, baseY - h.h - 30);
+            ctx.lineTo(h.x + worldOffset + h.w + 6, baseY - h.h);
+            ctx.closePath();
+            ctx.fill();
+            // cửa sổ
+            ctx.fillStyle = 'rgba(255,255,255,0.9)';
+            const ws = 16;
+            const wx = h.x + worldOffset + 12;
+            const wy = baseY - h.h + 18;
+            ctx.fillRect(wx, wy, ws, ws);
+            ctx.fillRect(wx + 36, wy, ws, ws);
+            // cửa
+            ctx.fillStyle = '#5a2e1a';
+            ctx.fillRect(h.x + worldOffset + h.w - 36, baseY - 36, 24, 36);
+        }
+
+        // Vẽ người que + xe máy
+        function drawRider(t) {
+            const x = rider.x;
+            const y = rider.y;
+            const wheelRadius = 16;
+          
+            const backX = x - 18;
+            const frontX = x + 28;
+            const wheelY = y + 22;
+          
+            // --- Bánh xe ---
+            ctx.lineWidth = 3;
+            ctx.strokeStyle = '#111';
+            ctx.beginPath();
+            ctx.arc(backX, wheelY, wheelRadius, 0, Math.PI * 2);
+            ctx.stroke();
+          
+            ctx.beginPath();
+            ctx.arc(frontX, wheelY, wheelRadius, 0, Math.PI * 2);
+            ctx.stroke();
+          
+            // --- Thân xe ---
+            ctx.lineWidth = 4;
+            ctx.strokeStyle = '#333';
+            ctx.beginPath();
+            ctx.moveTo(backX, wheelY - 2);
+            ctx.lineTo(x + 8, y - 4);
+            ctx.lineTo(frontX, wheelY - 2);
+            ctx.stroke();
+          
+            // --- Ghi-đông ---
+            ctx.beginPath();
+            ctx.moveTo(x + 8, y - 4);
+            ctx.lineTo(x + 36, y - 16);
+            ctx.lineTo(x + 44, y - 10);
+            ctx.stroke();
+          
+            // --- Thân xe chính (khối thân) ---
+            ctx.fillStyle = '#222';
+            ctx.fillRect(x - 4, y - 10, 14, 4);
+          
+            // --- Đèn xe ---
+            ctx.beginPath();
+            ctx.arc(x + 30, y - 16, 3, 0, Math.PI * 2);
+            ctx.fill();
+          
+            // --- Người que ---
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = '#000';
+          
+            // đầu
+            ctx.beginPath();
+            ctx.arc(x - 6, y - 50, 7, 0, Math.PI * 2);
+            ctx.fillStyle = '#ffe0bd';
+            ctx.fill();
+            ctx.stroke();
+          
+            // thân
+            ctx.beginPath();
+            ctx.moveTo(x - 6, y - 45);
+            ctx.lineTo(x - 6, y - 25);
+            ctx.stroke();
+          
+            // tay
+            ctx.beginPath();
+            ctx.moveTo(x - 6, y - 26);
+            ctx.lineTo(x + 30, y - 20);
+            ctx.stroke();
+          
+            // chân
+            ctx.beginPath();
+            ctx.moveTo(x - 5, y - 31);
+            ctx.lineTo(x - 18, y + 14);
+            ctx.stroke();
+          
+            ctx.beginPath();
+            ctx.moveTo(x - 5, y - 31);
+            ctx.lineTo(x + 8, y + 13);
+            ctx.stroke();
+          
+            // --- Hiệu ứng nan bánh ---
+            const drawSpokes = (cx, cy) => {
+              ctx.save();
+              ctx.translate(cx, cy);
+              ctx.rotate(rider.wheelAngle);
+              for (let i = 0; i < 6; i++) {
+                ctx.beginPath();
+                ctx.moveTo(0, 0);
+                ctx.lineTo(
+                  wheelRadius * Math.cos((i * Math.PI) / 3),
+                  wheelRadius * Math.sin((i * Math.PI) / 3)
+                );
+                ctx.stroke();
+              }
+              ctx.restore();
+            };
+          
+            drawSpokes(backX, wheelY);
+            drawSpokes(frontX, wheelY);
+        }
+
+        // Vẽ background (một vài đám mây đơn giản)
+        function drawSky(t) {
+            // mây di chuyển chậm
+            ctx.fillStyle = 'rgba(255,255,255,0.85)';
+            const cloudCount = 5;
+            for (let i = 0; i < cloudCount; i++) {
+                const cx = ((i * 300) - worldOffset * 0.2) % (W + 400) - 100;
+                const cy = 60 + (i % 2) * 20;
+                drawCloud(cx, cy);
+            }
+        }
+        function drawCloud(cx, cy) {
+            ctx.beginPath();
+            ctx.ellipse(cx, cy, 40, 20, 0, 0, Math.PI * 2);
+            ctx.ellipse(cx + 30, cy + 6, 30, 18, 0, 0, Math.PI * 2);
+            ctx.ellipse(cx - 30, cy + 6, 30, 18, 0, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+         // 👉 Thêm hiệu ứng mưa
+         const raindrops = [];
+        const RAIN_COUNT = 180; // số giọt mưa
+        function initRain() {
+            raindrops.length = 0;
+            for (let i = 0; i < RAIN_COUNT; i++) {
+                raindrops.push({
+                    x: Math.random() * W,
+                    y: Math.random() * H,
+                    len: 10 + Math.random() * 18,
+                    speed: 200 + Math.random() * 300,
+                    opacity: 0.4 + Math.random() * 0.5
+                });
+            }
+        }
+        initRain();
+    
+        function drawRain(dt) {
+            ctx.strokeStyle = 'rgba(180,180,255,0.7)';
+            ctx.lineWidth = 1.2;
+            ctx.beginPath();
+            for (let drop of raindrops) {
+                drop.y += drop.speed * dt;
+                if (drop.y > H) {
+                    drop.y = -drop.len;
+                    drop.x = Math.random() * W;
+                }
+                ctx.moveTo(drop.x, drop.y);
+                ctx.lineTo(drop.x + 2, drop.y + drop.len);
+            }
+            ctx.stroke();
+        }
+    
+        // --- override lại vòng lặp frame() ---
+        let last = performance.now();
+        function frame(now) {
+            const dt = (now - last) / 1000;
+            last = now;
+            if (!paused) {
+                worldOffset -= speedFactor * 60 * dt;
+                if (worldOffset < -1000) worldOffset += 1000;
+                rider.wheelAngle -= speedFactor * 2.4 * dt;
+            }
+    
+            ctx.clearRect(0, 0, W, H);
+            drawSky(now);
+            ctx.fillStyle = '#e6f2e6';
+            ctx.fillRect(0, roadY - 130, W, 130);
+            for (const h of houses) {
+                if (h.x + worldOffset + h.w < -200 || h.x + worldOffset > W + 200) continue;
+                drawHouse(h);
+            }
+            drawRoad();
+            drawRider(now);
+            if (houses.length) {
+                const first = houses[0];
+                if (first.x + worldOffset + first.w < -300) {
+                    houses.shift();
+                    const last = houses[houses.length - 1];
+                    const newX = last.x + last.w + 60 + Math.random() * 140;
+                    houses.push({ x: newX, w: 100 + Math.floor(Math.random() * 160), h: 80 + Math.floor(Math.random() * 180), color: randomHouseColor() });
+                }
+            }
+    
+            // ☔ Thêm gọi vẽ mưa
+            drawRain(dt);
+    
+            requestAnimationFrame(frame);
+        }
+        requestAnimationFrame(frame);
+
+        // Main loop
+        function frame(now) {
+            const dt = (now - last) / 1000; // seconds
+            last = now;
+            if (!paused) {
+                // cập nhật thế giới: di chuyển cảnh sang trái
+                worldOffset -= speedFactor * 60 * dt; // px/s roughly
+                // nếu nhà đã đi hết bên trái thì tái tạo chuỗi nhà ở phải
+                if (worldOffset < -1000) {
+                    worldOffset += 1000; // giữ cho offset không quá lớn
+                }
+                // bánh xe xoay
+                rider.wheelAngle -= speedFactor * 2.4 * dt;
+            }
+
+            // xóa
+            ctx.clearRect(0, 0, W, H);
+
+            // vẽ bầu trời & mây
+            drawSky(now);
+
+            // vẽ mặt đất 1 lớp xa (đồi) để tạo chiều sâu
+            ctx.fillStyle = '#e6f2e6';
+            ctx.fillRect(0, roadY - 130, W, 130);
+
+            // vẽ houses
+            for (const h of houses) {
+                // skip houses quá xa bên trái hoặc phải
+                if (h.x + worldOffset + h.w < -200 || h.x + worldOffset > W + 200) continue;
+                drawHouse(h);
+            }
+
+            // vẽ đường
+            drawRoad();
+
+            // vẽ người lái xe (luôn ở vị trí cố định trên canvas)
+            drawRider(now);
+
+            // cập nhật: nếu houses di chuyển ra khỏi màn hình (bên trái) thì thay bằng ngôi nhà mới ở bên phải
+            // đơn giản: nếu nhà đầu tiên ra khỏi trái thì push một nhà mới bên phải
+            if (houses.length) {
+                const first = houses[0];
+                if (first.x + worldOffset + first.w < -300) {
+                    // remove first and thêm 1 nhà mới ở cuối
+                    houses.shift();
+                    const last = houses[houses.length - 1];
+                    const newX = last.x + last.w + 60 + Math.random() * 140;
+                    houses.push({ x: newX, w: 100 + Math.floor(Math.random() * 160), h: 80 + Math.floor(Math.random() * 180), color: randomHouseColor() });
+                }
+            }
+
+            requestAnimationFrame(frame);
+        }
+        requestAnimationFrame(frame);
+
+        // UI: tạm dừng và điều chỉnh tốc độ
+        const btn = document.getElementById('toggle');
+        btn.addEventListener('click', () => {
+            paused = !paused;
+            btn.textContent = paused ? 'Tiếp tục' : 'Tạm dừng';
+        });
+        document.getElementById('speed').addEventListener('input', (e) => {
+            speedFactor = Number(e.target.value);
+            document.getElementById('spdVal').textContent = speedFactor;
+        });
+
+        // Gợi ý: bạn có thể thay đổi kích thước người, màu nhà hoặc thêm chi tiết.
+
+    </script>
+    
+</body>
+
+</html>

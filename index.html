@@ -84,3 +84,10 @@ layout: layout.html
   <small>({{ wish.date | date: "yyyy-MM-dd" }})</small>
 </li>
 {% endfor %}
+
+{% for wish in collections.packagewatermoney | reverse %}
+<li style="">
+  <a href="{{ packagewatermoney.url }}">{{ packagewatermoney.data.title }}</a>
+  <small>({{ packagewatermoney.date | date: "yyyy-MM-dd" }})</small>
+</li>
+{% endfor %}
