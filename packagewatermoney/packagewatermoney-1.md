@@ -1,5 +1,5 @@
 ---
 title: "Bucket của bạn chỉ có"
-date: 2025-08-01
+date: 2025-10-26
 ---
 
